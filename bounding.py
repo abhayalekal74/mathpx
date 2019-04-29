@@ -33,7 +33,7 @@ def get_adjacent_box_ids(boxes, row, col):
 		adjacent_box_ids += boxes[row - 1][col + 1]
 	if boxes[row][col - 1] != 0:
 		adjacent_box_ids += boxes[row][col - 1]
-	return adjacent_box_ids
+	return list(set(adjacent_box_ids))
 
 
 def get_empty_matrix(rows, cols):
@@ -50,7 +50,7 @@ def get_adjacent_boxes(rows, cols, pixels, boxes, same_boxes):
 	auto_box_id = 1
 	for row in range(1, rows + 1):
 		for col in range(1, cols + 1):
-			if (row + 1) < rows and (col + 1) < cols and pixels[row - 1][col - 1] < pixel_thres:
+			if (row - 1) < rows and (col - 1) < cols and pixels[row - 1][col - 1] < pixel_thres:
 				adjacent_box_ids = get_adjacent_box_ids(boxes, row, col) 
 				if adjacent_box_ids:
 					boxes[row][col] = adjacent_box_ids
@@ -59,6 +59,9 @@ def get_adjacent_boxes(rows, cols, pixels, boxes, same_boxes):
 				else:
 					boxes[row][col] = [auto_box_id]
 					auto_box_id += 1
+	print ("\nAdjacent boxes:")
+	for box in boxes:
+		print (box)
 
 
 def simplify_boxes(rows, cols, boxes, same_boxes):
