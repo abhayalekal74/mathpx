@@ -3,7 +3,24 @@ import cv2
 
 vertical_thres = 6 
 horiz_thres = 6
-pixel_thres = 180 
+pixel_thres = 145 
+
+
+class Rectangle:
+	def __init__(self, left, top, right, bottom):
+		self.left = left
+		self.top = top
+		self.right = right
+		self.bottom = bottom
+
+
+	def get_top_left(self):
+		return (self.left, self.top)
+
+
+	def get_bottom_right(self):
+		return (self.right, self.bottom)
+
 
 
 def get_pixels(image_path):
@@ -11,7 +28,6 @@ def get_pixels(image_path):
 
 
 def get_darker_pixel_positions(pixels):
-	print ("{}\n{}".format("Pixels:", pixels))
 	print ("\nDarker Pixels Representation:")
 	for i in range(pixels.shape[0]):
 		repr = ""
@@ -59,9 +75,6 @@ def get_adjacent_boxes(rows, cols, pixels, boxes, same_boxes):
 				else:
 					boxes[row][col] = [auto_box_id]
 					auto_box_id += 1
-	print ("\nAdjacent boxes:")
-	for box in boxes:
-		print (box)
 
 
 def simplify_boxes(rows, cols, boxes, same_boxes):
@@ -73,24 +86,21 @@ def simplify_boxes(rows, cols, boxes, same_boxes):
 					boxes[row][col] = same_boxes[boxes[row][col]]
 				except KeyError:
 					pass
-	print ("\nSimplified boxes (with a padding of 1):")
-	for box in boxes:
-		print (box)
 
 
 def get_rect_bounds(rows, cols, boxes):
-	rectangles = dict()
+	bounds = dict()
 	for row in range(1, rows + 1):
 		for col in range(1, cols + 1):
 			if boxes[row][col] != 0:
 				try:
-					points = rectangles[boxes[row][col]]
+					points = bounds[boxes[row][col]]
 				except KeyError:
 					points = [[], []]
-					rectangles[boxes[row][col]] = points
+					bounds[boxes[row][col]] = points
 				points[0].append(row - 1)
 				points[1].append(col - 1)
-	return rectangles
+	return bounds
 
 
 def generate_boxes(pixels):
@@ -99,14 +109,27 @@ def generate_boxes(pixels):
 	same_boxes = dict()
 	get_adjacent_boxes(rows, cols, pixels, boxes, same_boxes)
 	simplify_boxes(rows, cols, boxes, same_boxes)
-	rectangles = get_rect_bounds(rows, cols, boxes)
+	bounds = get_rect_bounds(rows, cols, boxes)
+	rectangles = dict()
+	for k, v in bounds.items():
+		rect = Rectangle(min(v[0]), min(v[1]), max(v[0]), max(v[1]))	
+		rectangles[k] = rect	
 	print ("\nRectangle bounds:")
 	for k, v in rectangles.items():
-		print ("RectID: {}\tPoints: {}, {}".format(k, (min(v[0]), min(v[1])), (max(v[0]), max(v[1]))))
+		print ("RectID: {}\tPoints: {}, {}".format(k, v.get_top_left(), v.get_bottom_right()))
+	return rectangles
+	
+
+def draw_rectangles_on_image(pixels, rectangles):
+	for rectangle in rectangles.values():
+		cv2.rectangle(pixels, rectangle.get_top_left(), rectangle.get_bottom_right(), (0, 0, 0))
 
 
 if __name__=='__main__':
 	import sys
 	pixels = get_pixels(sys.argv[1])
 	get_darker_pixel_positions(pixels)
-	generate_boxes(pixels)
+	rectangles = generate_boxes(pixels)
+	draw_rectangles_on_image(pixels, rectangles)
+	get_darker_pixel_positions(pixels)
+
