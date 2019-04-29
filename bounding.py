@@ -121,8 +121,17 @@ def generate_boxes(pixels):
 	
 
 def draw_rectangles_on_image(pixels, rectangles):
+	'''
 	for rectangle in rectangles.values():
 		cv2.rectangle(pixels, rectangle.get_top_left(), rectangle.get_bottom_right(), (0, 0, 0))
+	'''
+	for r in rectangles.values():
+		for x in range(r.left, r.right + 1):
+			pixels[x][r.top] = 0
+			pixels[x][r.bottom] = 0
+		for y in range(r.top, r.bottom + 1):
+			pixels[r.left][y] = 0
+			pixels[r.right][y] = 0
 
 
 if __name__=='__main__':
