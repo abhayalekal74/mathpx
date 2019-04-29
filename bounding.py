@@ -1,9 +1,8 @@
 import cv2
 
 
-vertical_thres = 6 
-horiz_thres = 6
 pixel_thres = 145 
+offset = 5 
 
 
 class Rectangle:
@@ -41,22 +40,20 @@ def get_darker_pixel_positions(pixels):
 
 def get_adjacent_box_ids(boxes, row, col):
 	adjacent_box_ids = []
-	if boxes[row - 1][col - 1] != 0:
-		adjacent_box_ids += boxes[row - 1][col - 1]
-	if boxes[row - 1][col] != 0:
-		adjacent_box_ids += boxes[row - 1][col]
-	if boxes[row - 1][col + 1] != 0:
-		adjacent_box_ids += boxes[row - 1][col + 1]
-	if boxes[row][col - 1] != 0:
-		adjacent_box_ids += boxes[row][col - 1]
+	for i in range(col - offset, col + offset + 1):
+		if boxes[row - 1][i] != 0:
+			adjacent_box_ids += boxes[row - 1][i]
+	for i in range(col - offset, col):
+		if boxes[row][i] != 0:
+			adjacent_box_ids += boxes[row][i]
 	return list(set(adjacent_box_ids))
 
 
 def get_empty_matrix(rows, cols):
 	boxes = list()
-	for row in range(rows + 2):
+	for row in range(rows + offset * 2):
 		zero_row = list()
-		for col in range(cols + 2):
+		for col in range(cols + offset * 2):
 			zero_row.append(0)
 		boxes.append(zero_row)
 	return boxes
@@ -64,9 +61,9 @@ def get_empty_matrix(rows, cols):
 
 def get_adjacent_boxes(rows, cols, pixels, boxes, same_boxes):
 	auto_box_id = 1
-	for row in range(1, rows + 1):
-		for col in range(1, cols + 1):
-			if (row - 1) < rows and (col - 1) < cols and pixels[row - 1][col - 1] < pixel_thres:
+	for row in range(offset, rows + offset):
+		for col in range(offset, cols + offset):
+			if (row - offset) < rows and (col - offset) < cols and pixels[row - offset][col - offset] < pixel_thres:
 				adjacent_box_ids = get_adjacent_box_ids(boxes, row, col) 
 				if adjacent_box_ids:
 					boxes[row][col] = adjacent_box_ids
@@ -78,8 +75,8 @@ def get_adjacent_boxes(rows, cols, pixels, boxes, same_boxes):
 
 
 def simplify_boxes(rows, cols, boxes, same_boxes):
-	for row in range(1, rows + 1):
-		for col in range(1, cols + 1):
+	for row in range(offset, rows + offset):
+		for col in range(offset, cols + offset):
 			if boxes[row][col] != 0:
 				boxes[row][col] = boxes[row][col][0]
 				try:
@@ -90,16 +87,16 @@ def simplify_boxes(rows, cols, boxes, same_boxes):
 
 def get_rect_bounds(rows, cols, boxes):
 	bounds = dict()
-	for row in range(1, rows + 1):
-		for col in range(1, cols + 1):
+	for row in range(offset, rows + offset):
+		for col in range(offset, cols + offset):
 			if boxes[row][col] != 0:
 				try:
 					points = bounds[boxes[row][col]]
 				except KeyError:
 					points = [[], []]
 					bounds[boxes[row][col]] = points
-				points[0].append(row - 1)
-				points[1].append(col - 1)
+				points[0].append(row - offset)
+				points[1].append(col - offset)
 	return bounds
 
 
