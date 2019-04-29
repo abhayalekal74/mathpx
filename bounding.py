@@ -11,12 +11,13 @@ def get_pixels(image_path):
 
 
 def get_darker_pixel_positions(pixels):
-	print (pixels)
+	print ("{}\n{}".format("Pixels:", pixels))
+	print ("\nDarker Pixels Representation:")
 	for i in range(pixels.shape[0]):
 		repr = ""
 		for j in range(pixels.shape[1]):
 			if pixels[i][j] < pixel_thres:
-				repr += '1' 
+				repr += '*' 
 			else:
 				repr += '.'
 		print (repr)
@@ -69,6 +70,7 @@ def simplify_boxes(rows, cols, boxes, same_boxes):
 					boxes[row][col] = same_boxes[boxes[row][col]]
 				except KeyError:
 					pass
+	print ("\nSimplified boxes (with a padding of 1):")
 	for box in boxes:
 		print (box)
 
@@ -95,8 +97,9 @@ def generate_boxes(pixels):
 	get_adjacent_boxes(rows, cols, pixels, boxes, same_boxes)
 	simplify_boxes(rows, cols, boxes, same_boxes)
 	rectangles = get_rect_bounds(rows, cols, boxes)
+	print ("\nRectangle bounds:")
 	for k, v in rectangles.items():
-		print (k, "\tpoints:", (min(v[0]), min(v[1])), (max(v[0]), max(v[1])))
+		print ("RectID: {}\tPoints: {}, {}".format(k, (min(v[0]), min(v[1])), (max(v[0]), max(v[1]))))
 
 
 if __name__=='__main__':
