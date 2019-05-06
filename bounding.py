@@ -3,8 +3,9 @@ from scipy.misc import imsave
 import os
 
 
-pixel_thres = 120 
-offset = 5 
+PIX_THRES = 120 
+OFFSET = 5
+MAG_FACTOR = 3
 
 
 class Rectangle:
@@ -33,7 +34,7 @@ def get_darker_pixel_positions(pixels):
 	for i in range(pixels.shape[0]):
 		repr = ""
 		for j in range(pixels.shape[1]):
-			if pixels[i][j] < pixel_thres:
+			if pixels[i][j] < PIX_THRES:
 				repr += '*' 
 			else:
 				repr += '.'
@@ -42,10 +43,10 @@ def get_darker_pixel_positions(pixels):
 
 def get_adjacent_box_ids(boxes, row, col):
 	adjacent_box_ids = []
-	for i in range(col - offset, col + offset + 1):
+	for i in range(col - OFFSET, col + OFFSET + 1):
 		if boxes[row - 1][i] != 0:
 			adjacent_box_ids += boxes[row - 1][i]
-	for i in range(col - offset, col):
+	for i in range(col - OFFSET, col):
 		if boxes[row][i] != 0:
 			adjacent_box_ids += boxes[row][i]
 	return list(set(adjacent_box_ids))
@@ -53,9 +54,9 @@ def get_adjacent_box_ids(boxes, row, col):
 
 def get_empty_matrix(rows, cols):
 	boxes = list()
-	for row in range(rows + offset * 2):
+	for row in range(rows + OFFSET * 2):
 		zero_row = list()
-		for col in range(cols + offset * 2):
+		for col in range(cols + OFFSET * 2):
 			zero_row.append(0)
 		boxes.append(zero_row)
 	return boxes
@@ -63,9 +64,9 @@ def get_empty_matrix(rows, cols):
 
 def get_adjacent_boxes(rows, cols, pixels, boxes, same_boxes):
 	auto_box_id = 1
-	for row in range(offset, rows + offset):
-		for col in range(offset, cols + offset):
-			if (row - offset) < rows and (col - offset) < cols and pixels[row - offset][col - offset] < pixel_thres:
+	for row in range(OFFSET, rows + OFFSET):
+		for col in range(OFFSET, cols + OFFSET):
+			if (row - OFFSET) < rows and (col - OFFSET) < cols and pixels[row - OFFSET][col - OFFSET] < PIX_THRES:
 				adjacent_box_ids = get_adjacent_box_ids(boxes, row, col) 
 				if adjacent_box_ids:
 					boxes[row][col] = adjacent_box_ids
@@ -77,8 +78,8 @@ def get_adjacent_boxes(rows, cols, pixels, boxes, same_boxes):
 
 
 def simplify_boxes(rows, cols, boxes, same_boxes):
-	for row in range(offset, rows + offset):
-		for col in range(offset, cols + offset):
+	for row in range(OFFSET, rows + OFFSET):
+		for col in range(OFFSET, cols + OFFSET):
 			if boxes[row][col] != 0:
 				boxes[row][col] = boxes[row][col][0]
 				try:
@@ -89,16 +90,16 @@ def simplify_boxes(rows, cols, boxes, same_boxes):
 
 def get_rect_bounds(rows, cols, boxes):
 	bounds = dict()
-	for row in range(offset, rows + offset):
-		for col in range(offset, cols + offset):
+	for row in range(OFFSET, rows + OFFSET):
+		for col in range(OFFSET, cols + OFFSET):
 			if boxes[row][col] != 0:
 				try:
 					points = bounds[boxes[row][col]]
 				except KeyError:
 					points = [[], []]
 					bounds[boxes[row][col]] = points
-				points[0].append(row - offset)
-				points[1].append(col - offset)
+				points[0].append(row - OFFSET)
+				points[1].append(col - OFFSET)
 	return bounds
 
 
@@ -144,7 +145,8 @@ def create_new_images_from_boxes(pixels, rectangles):
 				for x in range(r.left, r.right):
 					row_pixels.append(pixels[x][y])
 				new_image.append(row_pixels)
-			imsave(os.path.join('generated', str(image_id) + '.jpeg'), new_image)
+			magnified_image = cv2.resize(new_image, None, fx = MAG_FACTOR, fy = MAG_FACTOR)
+			imsave(os.path.join('generated', str(image_id) + '.jpeg'), magnified_image)
 		except:
 			pass
 
