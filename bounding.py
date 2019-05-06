@@ -145,8 +145,8 @@ def create_new_images_from_boxes(pixels, rectangles):
 				for x in range(r.left, r.right):
 					row_pixels.append(pixels[x][y])
 				new_image.append(row_pixels)
-			magnified_image = cv2.resize(new_image, None, fx = MAG_FACTOR, fy = MAG_FACTOR)
-			imsave(os.path.join('generated', str(image_id) + '.jpeg'), magnified_image)
+			#magnified_image = cv2.resize(cv2.UMat(new_image), None, fx = MAG_FACTOR, fy = MAG_FACTOR)
+			imsave(os.path.join('generated', str(image_id) + '.jpeg'), new_image)
 		except:
 			pass
 
