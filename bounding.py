@@ -1,7 +1,9 @@
 import cv2
+from scipy.misc import imsave
+import os
 
 
-pixel_thres = 145 
+pixel_thres = 120 
 offset = 5 
 
 
@@ -131,11 +133,28 @@ def draw_rectangles_on_image(pixels, rectangles):
 			pixels[r.right][y] = 0
 
 
+def create_new_images_from_boxes(pixels, rectangles):
+	image_id = 0
+	for r in rectangles.values():
+		try:
+			image_id += 1
+			new_image = list()
+			for y in range(r.top, r.bottom):
+				row_pixels = list()
+				for x in range(r.left, r.right):
+					row_pixels.append(pixels[x][y])
+				new_image.append(row_pixels)
+			imsave(os.path.join('generated', str(image_id) + '.jpeg'), new_image)
+		except:
+			pass
+
+
 if __name__=='__main__':
 	import sys
 	pixels = get_pixels(sys.argv[1])
-	get_darker_pixel_positions(pixels)
+	#get_darker_pixel_positions(pixels)
 	rectangles = generate_boxes(pixels)
-	draw_rectangles_on_image(pixels, rectangles)
-	get_darker_pixel_positions(pixels)
+	#draw_rectangles_on_image(pixels, rectangles)
+	create_new_images_from_boxes(pixels, rectangles)
+	#get_darker_pixel_positions(pixels)
 
