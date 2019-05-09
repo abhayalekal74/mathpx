@@ -1,11 +1,14 @@
 import cv2
+import sys
+import numpy as np
 from scipy.misc import imsave
 import os
 
 
 PIX_THRES = 120 
-OFFSET = 5
+OFFSET = 5 
 MAG_FACTOR = 3
+GEN_FOLDER = 'generated'
 
 
 class Rectangle:
@@ -26,7 +29,14 @@ class Rectangle:
 
 
 def get_pixels(image_path):
-	return cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+	img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+	#img = cv2.resize(img, None, fx=MAG_FACTOR, fy=MAG_FACTOR, interpolation=cv2.INTER_AREA)
+	# Apply dilation and erosion to remove some noise
+	#kernel = np.ones((1, 1), np.uint8)
+	#img = cv2.dilate(img, kernel, iterations=1)
+	#img = cv2.erode(img, kernel, iterations=1)
+	#img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+	return img 
 
 
 def get_darker_pixel_positions(pixels):
@@ -134,29 +144,33 @@ def draw_rectangles_on_image(pixels, rectangles):
 			pixels[r.right][y] = 0
 
 
-def create_new_images_from_boxes(pixels, rectangles):
+def create_new_images_from_boxes(dest, pixels, rectangles):
 	image_id = 0
+	try:
+		os.mkdir(os.path.join(GEN_FOLDER, dest))
+	except Exception as e:
+		print ('\n', e, "\n\nExiting...")
+		sys.exit(0)
 	for r in rectangles.values():
+		image_id += 1
+		new_image = list()
+		for y in range(r.top, r.bottom):
+			row_pixels = list()
+			for x in range(r.left, r.right):
+				row_pixels.append(pixels[x][y])
+			new_image.append(row_pixels)
+		#magnified_image = cv2.resize(cv2.UMat(new_image), None, fx = MAG_FACTOR, fy = MAG_FACTOR)
 		try:
-			image_id += 1
-			new_image = list()
-			for y in range(r.top, r.bottom):
-				row_pixels = list()
-				for x in range(r.left, r.right):
-					row_pixels.append(pixels[x][y])
-				new_image.append(row_pixels)
-			#magnified_image = cv2.resize(cv2.UMat(new_image), None, fx = MAG_FACTOR, fy = MAG_FACTOR)
-			imsave(os.path.join('generated', str(image_id) + '.jpeg'), new_image)
+			imsave(os.path.join(GEN_FOLDER, dest, str(image_id) + '.jpeg'), new_image)
 		except:
 			pass
 
 
 if __name__=='__main__':
-	import sys
 	pixels = get_pixels(sys.argv[1])
-	#get_darker_pixel_positions(pixels)
+	get_darker_pixel_positions(pixels)
 	rectangles = generate_boxes(pixels)
 	#draw_rectangles_on_image(pixels, rectangles)
-	create_new_images_from_boxes(pixels, rectangles)
+	create_new_images_from_boxes(sys.argv[2], pixels, rectangles)
 	#get_darker_pixel_positions(pixels)
 
