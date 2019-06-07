@@ -3,7 +3,7 @@ inftycdb/*
 Math-OCR/
 generate*
 *.sw*
-model/image*
-model/nohup.out
+char-recognition-model/image*
+char-recognition-model/nohup.out
 seshat/
 xerces-c-3*
