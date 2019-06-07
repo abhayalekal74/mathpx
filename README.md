@@ -1,3 +1,3 @@
 # mathpx
 
-OCR to detect mathematical equations
+OCR for mathematical equations
