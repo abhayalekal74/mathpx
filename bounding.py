@@ -168,7 +168,7 @@ def create_new_images_from_boxes(dest, pixels, rectangles):
 
 if __name__=='__main__':
 	pixels = get_pixels(sys.argv[1])
-	get_darker_pixel_positions(pixels)
+	#get_darker_pixel_positions(pixels)
 	rectangles = generate_boxes(pixels)
 	#draw_rectangles_on_image(pixels, rectangles)
 	create_new_images_from_boxes(sys.argv[2], pixels, rectangles)

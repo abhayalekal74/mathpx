@@ -1,2 +1,9 @@
-*
-!*.py
+inftycdb/*
+!inftycdb/*.py
+Math-OCR/
+generate*
+*.sw*
+model/image*
+model/nohup.out
+seshat/
+xerces-c-3*
