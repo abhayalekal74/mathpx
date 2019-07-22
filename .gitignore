@@ -1,4 +1,6 @@
 inftycdb/*
+enc-dec/
+*.zip
 !inftycdb/*.py
 Math-OCR/
 generate*

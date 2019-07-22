@@ -1,7 +1,9 @@
 from sys import argv, exit
+from pprint import PrettyPrinter
 import argparse
 import json
 from tqdm import tqdm 
+import pickle
 
 from os import listdir
 from os.path import isfile, isdir, join
@@ -10,6 +12,9 @@ import keras
 import numpy as np
 from scipy.misc import imread, imresize
 
+
+predict = False
+pp = PrettyPrinter(indent=4)
 
 def die(err):
 	exit("\nError: {}, exiting".format(err))
@@ -66,7 +71,6 @@ def get_classes(src_folder):
 	for f in listdir(src_folder):
 		if isdir(join(src_folder, f)):
 			classes[join(src_folder, f)] = f
-	print (classes)
 	return classes
 
 
@@ -77,7 +81,7 @@ def get_resize_shape(images, resize, shape=None):
 	elif resize:	
 		row_shapes, col_shapes = [], []
 		for img in images:
-			img_matrix = imread(img, mode='RGB')
+			img_matrix = imread(img, mode='L')
 			if img_matrix is not None:
 				row_shapes.append(img_matrix.shape[0])
 				col_shapes.append(img_matrix.shape[1])
@@ -87,7 +91,7 @@ def get_resize_shape(images, resize, shape=None):
 	else:
 		# Read one image's shape
 		for img in images:
-			img_matrix = imread(images[0], mode='RGB')
+			img_matrix = imread(images[0], mode='L')
 			if img_matrix is not None:
 				rows, cols = img_matrix.shape[0], img_matrix.shape[1]
 				break
@@ -114,39 +118,51 @@ class LanguageDetector:
 
 	def encode_labels(self):
 		from sklearn.preprocessing import MultiLabelBinarizer 
-		labels = []
-		# labels in string form are encoded using MultiLabelBinarizer
-		for k, v in self.classes.items():
-			labels.append([l.strip() for l in v.split(",")])
-		self.label_encoder = MultiLabelBinarizer()
-		print ("Transforms: {}".format(self.label_encoder.fit_transform(labels)))		
-		print ("0utput classes: {}".format(self.label_encoder.classes_))
+		if predict:
+			self.label_encoder = pickle.load(open('label_encoder.pkl', 'rb'))
+		else:
+			labels = []
+			# labels in string form are encoded using MultiLabelBinarizer
+			for k, v in self.classes.items():
+				labels.append([l.strip() for l in v.split(",")])
+			self.label_encoder = MultiLabelBinarizer()
+			self.label_encoder.fit_transform(labels)		
+			pickle.dump(self.label_encoder, open('label_encoder.pkl', 'wb'))
  
 
 	def get_dataset(self, start, end):
 		x, y = None,[]
+		temp = []
 		for i in tqdm(range(start, end)):
 			img = self.images[i]
-			# Read the image as a matrix in RGB mode
-			img_matrix = imread(img, mode='RGB')
+			img_matrix = imread(img, mode='L')
 			if img_matrix is not None:
 				if self.should_resize_images:
 					# Resize the images to a common shape
-					img_matrix = imresize(img_matrix, (self.rows, self.cols, 3)) 
+					img_matrix = imresize(img_matrix, (self.rows, self.cols)) 
 				# Append the image matrix to the list of input matrices
 				if args.predict:
 					if x is None:
 						x = []
 					x.append(img_matrix)
 				else:
-					if x is None:
-						x = np.array([img_matrix])
-					else:
-						x = np.append(x, [img_matrix], axis = 0)
+					temp.append(img_matrix)
+					if len(temp) % 10000 == 0:
+						if x is None:
+							x = np.array(temp)
+						else:
+							x = np.append(x, np.array(temp), axis = 0)
+						temp = []
 				#x.append(img_matrix)
 				labels = str(self.classes[img[:img.rfind("/")]]).split(",")
 				# Append the labels to output list
 				y.append(np.squeeze(self.label_encoder.transform([labels])))
+		print (x is None)
+		if len(temp) > 0:
+			if x is None:
+				x = np.array(temp)
+			else:
+				x = np.append(x, np.array(temp), axis = 0)
 
 		if args.predict:
 			x = np.array(x)
@@ -165,26 +181,26 @@ class LanguageDetector:
 			# Otherwise build a CNN
 			self.model = keras.models.Sequential()
 	
-			self.model.add(keras.layers.BatchNormalization(input_shape=(self.rows, self.cols, 3)))
+			self.model.add(keras.layers.BatchNormalization(input_shape=(self.rows, self.cols)))
 	
-			self.model.add(keras.layers.Conv2D(16, (3,3), activation='relu', input_shape=(self.rows, self.cols, 3))) 
+			self.model.add(keras.layers.Conv1D(16, 3, activation='relu', input_shape=(self.rows, self.cols))) 
 			self.model.add(keras.layers.BatchNormalization())
-			self.model.add(keras.layers.MaxPooling2D(pool_size=(2,2), padding='same'))
+			self.model.add(keras.layers.MaxPooling1D(pool_size=2, padding='same'))
 			self.model.add(keras.layers.Dropout(0.2))
 	
-			self.model.add(keras.layers.Conv2D(24, (3,3), activation='relu', input_shape=(self.rows, self.cols, 3))) 
+			self.model.add(keras.layers.Conv1D(24, 3, activation='relu'))
 			self.model.add(keras.layers.BatchNormalization())
-			self.model.add(keras.layers.MaxPooling2D(pool_size=(2,2), padding='same'))
+			self.model.add(keras.layers.MaxPooling1D(pool_size=2, padding='same'))
 			self.model.add(keras.layers.Dropout(0.2))
 	
-			self.model.add(keras.layers.Conv2D(32, (3,3), activation='relu', input_shape=(self.rows, self.cols, 3))) 
+			self.model.add(keras.layers.Conv1D(32, 3, activation='relu'))
 			self.model.add(keras.layers.BatchNormalization())
-			self.model.add(keras.layers.MaxPooling2D(pool_size=(2,2), padding='same'))
+			self.model.add(keras.layers.MaxPooling1D(pool_size=2, padding='same'))
 			self.model.add(keras.layers.Dropout(0.2))
 	
-			self.model.add(keras.layers.Conv2D(40, (3,3), activation='relu', input_shape=(self.rows, self.cols, 3))) 
+			self.model.add(keras.layers.Conv1D(40, 3, activation='relu')) 
 			self.model.add(keras.layers.BatchNormalization())
-			self.model.add(keras.layers.MaxPooling2D(pool_size=(2,2), padding='same'))
+			self.model.add(keras.layers.MaxPooling1D(pool_size=2, padding='same'))
 			self.model.add(keras.layers.Dropout(0.2))
 
 			# Flattening the input to be passed onto Fully Connected Layers
@@ -224,18 +240,30 @@ class LanguageDetector:
 
 
 	def predict(self):
+		with open('classcodes.json', 'r') as f:
+			class_codes = json.load(f)
 		x_test, y_test = self.get_dataset(0, len(self.images))
 		res = self.model.predict(x_test, batch_size=32, verbose=1)
 		class_argmax = {} # Storing encoding index
+		print (self.label_encoder.classes_)
 		for c in self.label_encoder.classes_:
 			class_argmax[np.argmax(self.label_encoder.transform([[c,]]))] = c
+		outputs = list()
 		for i in range(len(self.images)):
-			print (self.images[i], np.argmax(res[i]))
+			try:
+				outputs.append((int(self.images[i].rsplit('/', 1)[1].split('.')[0]), self.images[i], class_argmax[np.argmax(res[i])], class_codes[class_argmax[np.argmax(res[i])]]))
+			except:
+				outputs.append((self.images[i].rsplit('/', 1)[1].split('.')[0], self.images[i], class_argmax[np.argmax(res[i])], class_codes[class_argmax[np.argmax(res[i])]]))
+				
+		outputs.sort(key=lambda x: x[0])
+		pp.pprint (outputs)
 		print ("\nEvaluation on test data: {}".format(dict(zip(["Loss", "Accuracy"], self.model.evaluate(x_test, y_test, batch_size=32)))))
 
 
 if __name__=="__main__":
 	args = parse_args()
+	predict = args.predict
+	print (predict)
 	keras.backend.set_learning_phase(0)
 	language_detector = LanguageDetector(args)
 	language_detector.predict() if args.predict else language_detector.train()

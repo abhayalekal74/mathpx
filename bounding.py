@@ -1,12 +1,15 @@
+import math
+from scipy.misc import imresize
 import cv2
 import sys
 import numpy as np
 from scipy.misc import imsave
 import os
+import keras
 
 
 PIX_THRES = 120 
-OFFSET = 5 
+OFFSET = 2 
 MAG_FACTOR = 3
 GEN_FOLDER = 'generated'
 
@@ -154,23 +157,43 @@ def create_new_images_from_boxes(dest, pixels, rectangles):
 	for r in rectangles.values():
 		image_id += 1
 		new_image = list()
-		for y in range(r.top, r.bottom):
+		for x in range(r.left, r.right + 1):
 			row_pixels = list()
-			for x in range(r.left, r.right):
-				row_pixels.append(pixels[x][y])
+			for y in range(r.top, r.bottom + 1):
+				row_pixels.append(pixels[x][y] if pixels[x][y] < PIX_THRES else 255)
 			new_image.append(row_pixels)
+		if len(new_image) < 50: #50 is the shape on which the model is trained
+			vert_pad_one_side = math.ceil((50 - len(new_image)) / 2.0)
+		else:
+			vert_pad_one_side = 5 
+		if len(new_image[0]) < 50: #50 is the shape on which the model is trained
+			horiz_pad_one_side = math.ceil((50 - len(new_image[0])) / 2.0)
+		else:
+			horiz_pad_one_side = 5 
+		new_image_horiz_padded = list()
+		for row in new_image:
+			new_image_horiz_padded.append([255] * horiz_pad_one_side + row + [255] * horiz_pad_one_side)
+		vert_pad = [[255] * len(new_image_horiz_padded[0])] * vert_pad_one_side
+		new_image_both_padded = vert_pad + new_image_horiz_padded + vert_pad
+	
+		"""	
 		#magnified_image = cv2.resize(cv2.UMat(new_image), None, fx = MAG_FACTOR, fy = MAG_FACTOR)
 		try:
-			imsave(os.path.join(GEN_FOLDER, dest, str(image_id) + '.jpeg'), new_image)
+			imsave(os.path.join(GEN_FOLDER, dest, str(image_id) + '.jpeg'), new_image_both_padded)
 		except:
 			pass
+		"""
+				
 
 
 if __name__=='__main__':
+	from time import time
+	start = time()
 	pixels = get_pixels(sys.argv[1])
 	#get_darker_pixel_positions(pixels)
 	rectangles = generate_boxes(pixels)
+	model = keras.models.load_model(sys.argv[3])
 	#draw_rectangles_on_image(pixels, rectangles)
 	create_new_images_from_boxes(sys.argv[2], pixels, rectangles)
 	#get_darker_pixel_positions(pixels)
-
+	print ("Total time taken", str((time() - start) * 1000) + " ms")
