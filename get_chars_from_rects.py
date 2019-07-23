@@ -1,4 +1,6 @@
+import json
 import uuid
+import pickle
 from merge_based_on_pixel_pos import get_latex
 import math
 from scipy.misc import imread, imresize
@@ -207,10 +209,16 @@ def create_new_images_from_boxes(pixels, rectangles):
 			
 # Predict chars in the rectangles detected
 def predict(model, rectangles):	
+	label_encoder = pickle.load(open('char-recognition-model/label_encoder.pkl', 'rb'))
+	with open('char-recognition-model/classcodes.json', 'r') as f:
+		class_codes = json.load(f)
+	class_argmax = {} # Storing encoding index
+	for c in label_encoder.classes_:
+		class_argmax[np.argmax(label_encoder.transform([[c,]]))] = c
 	for r in rectangles.values():
 		img = imresize(r.image_matrix, (MODEL_SHAPE, MODEL_SHAPE))
 		res = model.predict(np.array([img, ]))
-		r.prediction = np.argmax(res)
+		r.prediction = class_codes[class_argmax[np.argmax(res)]]
 		#print (r.get_top_left(), r.get_bottom_right(), r.prediction)
 
 
