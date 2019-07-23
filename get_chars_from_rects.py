@@ -1,4 +1,5 @@
 import uuid
+from merge_based_on_pixel_pos import get_latex
 import math
 from scipy.misc import imread, imresize
 import cv2
@@ -15,6 +16,7 @@ MAG_FACTOR = 3
 GEN_FOLDER = 'generated'
 MODEL_SHAPE = 50
 WHITE_PIXEL = 255
+
 
 class Rectangle:
 	def __init__(self, left, top, right, bottom):
@@ -196,10 +198,6 @@ def predict(model, rectangles):
 		print (r.get_top_left(), r.get_bottom_right(), r.prediction)
 
 
-def latex(rectangles):
-		
-
-
 if __name__=='__main__':
 	from time import time
 	start = time()
@@ -210,6 +208,6 @@ if __name__=='__main__':
 	#draw_rectangles_on_image(pixels, rectangles)
 	create_new_images_from_boxes(pixels, rectangles)
 	predict(model, rectangles)
-	latex(rectangles)
+	get_latex(rectangles)
 	#get_darker_pixel_positions(pixels)
 	print ("Total time taken", str((time() - start) * 1000) + " ms")
