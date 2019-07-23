@@ -5,6 +5,8 @@ import re
 VERTICAL_THRES = 10 # lt is used, so keep the VERTICAL_THRES as desired_val + 1 
 HORIZ_THRES = 16
 
+
+#Contains info of the rect coordinates, and the data within it
 class Bound:
 	def __init__(self, w, l, t, r, b):
 		self.word = w
@@ -30,6 +32,7 @@ class XPosMap:
 			[b.print() for b in v]
 
 
+# To find out a vertical threshold based on the image
 def set_vertical_thres(bounds):
 	global VERTICAL_THRES
 	sum = 0
@@ -95,12 +98,10 @@ def check_if_fraction(x_pos_map, first_bound_of_next_batch, last_bound_of_next_b
 	return (prev_word_bottom == 0 and abs(last_bound_of_next_batch.top - next_word_bottom) < VERTICAL_THRES) or (abs(first_bound_of_next_batch.top - prev_word_bottom) < VERTICAL_THRES and abs(last_bound_of_next_batch.top - next_word_bottom) < VERTICAL_THRES) or (abs(first_bound_of_next_batch.top - prev_word_bottom) < VERTICAL_THRES and next_word_bottom == 0) 
 	
 
+"""
+Grouping all bounds in a line into one batch
+"""
 def merge_bounds(bounds):
-
-	"""
-	Grouping all bounds in a line into one batch
-	"""
-
 	rect_bottoms = list() # Contains rectangle bottom points
 	for b in bounds:
 		rect_bottoms.append(b.bottom)
