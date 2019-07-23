@@ -133,9 +133,11 @@ def generate_boxes(pixels):
 	for k, v in bounds.items():
 		rect = Rectangle(min(v[0]), min(v[1]), max(v[0]), max(v[1]))	
 		rectangles[k] = rect	
+	"""
 	print ("\nRectangle bounds:")
 	for k, v in rectangles.items():
 		print ("RectID: {}\tPoints: {}, {}".format(k, v.get_top_left(), v.get_bottom_right()))
+	"""
 	return rectangles
 	
 
@@ -154,12 +156,14 @@ def draw_rectangles_on_image(pixels, rectangles):
 
 
 def create_new_images_from_boxes(pixels, rectangles):
+	"""
 	image_id = 0
 	folder_name = str(uuid.uuid4())
 	print ("Images stored in folder", folder_name)
 	os.mkdir(os.path.join(GEN_FOLDER, folder_name))
+	"""
 	for r in rectangles.values():
-		image_id += 1
+		#image_id += 1
 		new_image = list()
 		for x in range(r.left, r.right + 1):
 			row_pixels = list()
@@ -195,7 +199,7 @@ def predict(model, rectangles):
 		img = imresize(r.image_matrix, (MODEL_SHAPE, MODEL_SHAPE))
 		res = model.predict(np.array([img, ]))
 		r.prediction = np.argmax(res)
-		print (r.get_top_left(), r.get_bottom_right(), r.prediction)
+		#print (r.get_top_left(), r.get_bottom_right(), r.prediction)
 
 
 if __name__=='__main__':

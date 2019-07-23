@@ -216,7 +216,7 @@ def merge_bounds(bounds):
 def get_latex(rectangles):
 	bounds = list()
 	for r in rectangles.values():
-		bounds.append(Bound(r.prediction, r.left(), r.top(), r.right(), r.bottom())) 
+		bounds.append(Bound(str(r.prediction), max(1, r.left), max(1, r.top), r.right, r.bottom)) 
 	if len(bounds) > 0:
 		set_vertical_thres(bounds)
 		merge_bounds(bounds)
