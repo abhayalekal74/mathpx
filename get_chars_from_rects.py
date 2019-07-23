@@ -18,6 +18,9 @@ MODEL_SHAPE = 50
 WHITE_PIXEL = 255
 
 
+"""
+Rectangle class: holds coordinates, prediction and final padded image matrix
+"""
 class Rectangle:
 	def __init__(self, left, top, right, bottom):
 		self.left = left
@@ -36,7 +39,7 @@ class Rectangle:
 		return (self.right, self.bottom)
 
 
-
+#Reading image, apply needed preprocessing steps here
 def get_pixels(image_path):
 	img = imread(image_path, 'L')
 	#img = cv2.resize(img, None, fx=MAG_FACTOR, fy=MAG_FACTOR, interpolation=cv2.INTER_AREA)
@@ -48,6 +51,7 @@ def get_pixels(image_path):
 	return img 
 
 
+#Print the image highlighting the darker pixels. Update PIXEL_THRES if noise is also drawn
 def get_darker_pixel_positions(pixels):
 	print ("\nDarker Pixels Representation:")
 	for i in range(pixels.shape[0]):
@@ -71,6 +75,7 @@ def get_adjacent_box_ids(boxes, row, col):
 	return list(set(adjacent_box_ids))
 
 
+#Get empty matrix of the shape of image + 2 * offset as padding
 def get_empty_matrix(rows, cols):
 	boxes = list()
 	for row in range(rows + OFFSET * 2):
@@ -81,6 +86,7 @@ def get_empty_matrix(rows, cols):
 	return boxes
 
 
+#Assign same box ids to pixels adjacent to each other
 def get_adjacent_boxes(rows, cols, pixels, boxes, same_boxes):
 	auto_box_id = 1
 	for row in range(OFFSET, rows + OFFSET):
@@ -96,6 +102,7 @@ def get_adjacent_boxes(rows, cols, pixels, boxes, same_boxes):
 					auto_box_id += 1
 
 
+#If boxes with different box ids are adjacent to each other, assign same box ids to both boxes
 def simplify_boxes(rows, cols, boxes, same_boxes):
 	for row in range(OFFSET, rows + OFFSET):
 		for col in range(OFFSET, cols + OFFSET):
@@ -107,6 +114,7 @@ def simplify_boxes(rows, cols, boxes, same_boxes):
 					pass
 
 
+#Get rectangle bounds of simplified boxes (left, top, right, bottom)
 def get_rect_bounds(rows, cols, boxes):
 	bounds = dict()
 	for row in range(OFFSET, rows + OFFSET):
@@ -122,6 +130,7 @@ def get_rect_bounds(rows, cols, boxes):
 	return bounds
 
 
+#To generate rects by clubbing pixels
 def generate_boxes(pixels):
 	rows, cols = pixels.shape
 	boxes = get_empty_matrix(rows, cols)
@@ -141,6 +150,7 @@ def generate_boxes(pixels):
 	return rectangles
 	
 
+#To be used to check if the box creation algo is working fine
 def draw_rectangles_on_image(pixels, rectangles):
 	'''
 	for rectangle in rectangles.values():
@@ -155,6 +165,7 @@ def draw_rectangles_on_image(pixels, rectangles):
 			pixels[r.right][y] = 0
 
 
+#Creates images of the shape the model is trained on. Adds padding if necessary
 def create_new_images_from_boxes(pixels, rectangles):
 	"""
 	image_id = 0
@@ -194,6 +205,7 @@ def create_new_images_from_boxes(pixels, rectangles):
 		r.image_matrix = new_image_both_padded
 		
 			
+# Predict chars in the rectangles detected
 def predict(model, rectangles):	
 	for r in rectangles.values():
 		img = imresize(r.image_matrix, (MODEL_SHAPE, MODEL_SHAPE))
