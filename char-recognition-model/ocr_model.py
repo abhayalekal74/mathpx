@@ -198,11 +198,6 @@ class LanguageDetector:
 			self.model.add(keras.layers.MaxPooling1D(pool_size=2, padding='same'))
 			self.model.add(keras.layers.Dropout(0.2))
 	
-			self.model.add(keras.layers.Conv1D(40, 3, activation='relu')) 
-			self.model.add(keras.layers.BatchNormalization())
-			self.model.add(keras.layers.MaxPooling1D(pool_size=2, padding='same'))
-			self.model.add(keras.layers.Dropout(0.2))
-
 			# Flattening the input to be passed onto Fully Connected Layers
 			self.model.add(keras.layers.Flatten())
 
@@ -217,11 +212,11 @@ class LanguageDetector:
 
 	def train(self):
 		self.model.compile(loss='categorical_crossentropy',
-					  optimizer='adam',
+					  optimizer='rmsprop',
 					  metrics=['accuracy'])
 
 		# Create checkpoint after every epoch
-		cb = [keras.callbacks.ModelCheckpoint(self.save_as[:-3] + "_cp.h5", monitor='acc', verbose=1, save_best_only=False, save_weights_only=False, mode='auto', period=1)]
+		cb = [keras.callbacks.ModelCheckpoint(self.save_as[:-3] + "_cp.h5", monitor='acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)]
 
 		x_train, y_train = self.get_dataset(5, len(self.images))
 		x_val, y_val = self.get_dataset(0, 5)
