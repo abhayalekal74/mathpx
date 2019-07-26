@@ -183,17 +183,20 @@ class LanguageDetector:
 	
 			self.model.add(keras.layers.BatchNormalization(input_shape=(self.rows, self.cols)))
 	
-			self.model.add(keras.layers.Conv1D(16, 3, activation='relu', input_shape=(self.rows, self.cols))) 
+			self.model.add(keras.layers.Conv1D(16, 5, activation='relu', input_shape=(self.rows, self.cols))) 
+			self.model.add(keras.layers.BatchNormalization())
+			self.model.add(keras.layers.Dropout(0.2))
+	
+			self.model.add(keras.layers.Conv1D(32, 5, activation='relu'))
+			self.model.add(keras.layers.BatchNormalization())
+			self.model.add(keras.layers.Dropout(0.2))
+	
+			self.model.add(keras.layers.Conv1D(48, 3, activation='relu'))
 			self.model.add(keras.layers.BatchNormalization())
 			self.model.add(keras.layers.MaxPooling1D(pool_size=2, padding='same'))
 			self.model.add(keras.layers.Dropout(0.2))
 	
-			self.model.add(keras.layers.Conv1D(24, 3, activation='relu'))
-			self.model.add(keras.layers.BatchNormalization())
-			self.model.add(keras.layers.MaxPooling1D(pool_size=2, padding='same'))
-			self.model.add(keras.layers.Dropout(0.2))
-	
-			self.model.add(keras.layers.Conv1D(32, 3, activation='relu'))
+			self.model.add(keras.layers.Conv1D(64, 3, activation='relu'))
 			self.model.add(keras.layers.BatchNormalization())
 			self.model.add(keras.layers.MaxPooling1D(pool_size=2, padding='same'))
 			self.model.add(keras.layers.Dropout(0.2))
