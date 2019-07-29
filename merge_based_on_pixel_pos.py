@@ -218,6 +218,8 @@ def get_latex(rectangles):
 	bounds = list()
 	for r in rectangles.values():
 		bounds.append(Bound(str(r.prediction), max(1, r.left), max(1, r.top), r.right, r.bottom)) 
+	for b in bounds:
+		print ("{},{},{},{},{}".format(b.word, b.left, b.top, b.right, b.bottom))
 	if len(bounds) > 0:
 		set_vertical_thres(bounds)
 		merge_bounds(bounds)

@@ -7,7 +7,7 @@ import numpy as np
 
 minGreyPix = 100
 maxGreyPix = 150
-noisyImageCopies = 8
+noisyImageCopies = 5 
 minNoisePerc = 10
 maxNoisePerc = 30
 

@@ -172,7 +172,7 @@ def create_new_images_from_boxes(pixels, rectangles):
 	image_id = 0
 	folder_name = str(uuid.uuid4())
 	print ("Images stored in folder", folder_name)
-	os.mkdir(os.path.join(GEN_FOLDER, folder_name))
+	#os.mkdir(os.path.join(GEN_FOLDER, folder_name))
 	for r in rectangles.values():
 		image_id += 1
 		new_image = list()
@@ -196,10 +196,12 @@ def create_new_images_from_boxes(pixels, rectangles):
 		new_image_both_padded = vert_pad + new_image_horiz_padded + vert_pad
 	
 		#magnified_image = cv2.resize(cv2.UMat(new_image), None, fx = MAG_FACTOR, fy = MAG_FACTOR)
+		"""
 		try:
 			imsave(os.path.join(GEN_FOLDER, folder_name, str(image_id) + '.jpeg'), new_image_both_padded)
 		except:
 			pass
+		"""
 		r.image_matrix = new_image_both_padded
 		
 			
