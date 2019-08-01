@@ -1,3 +1,4 @@
+from collections import defaultdict 
 import json
 import uuid
 import pickle
@@ -13,8 +14,7 @@ import keras
 
 
 PIX_THRES = 120 
-OFFSET = 2 
-MAG_FACTOR = 3
+OFFSET = 1 
 GEN_FOLDER = 'generated'
 MODEL_SHAPE = 50
 WHITE_PIXEL = 255
@@ -43,27 +43,44 @@ class Rectangle:
 
 #Reading image, apply needed preprocessing steps here
 def get_pixels(image_path):
-	img = imread(image_path, 'L')
+	#img = imread(image_path, 'L')
 	#img = cv2.resize(img, None, fx=MAG_FACTOR, fy=MAG_FACTOR, interpolation=cv2.INTER_AREA)
 	# Apply dilation and erosion to remove some noise
 	#kernel = np.ones((1, 1), np.uint8)
 	#img = cv2.dilate(img, kernel, iterations=1)
 	#img = cv2.erode(img, kernel, iterations=1)
 	#img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+	img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+	img = cv2.GaussianBlur(img, (3,3), 0)
+	img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 75, 10)
 	return img 
+
+
+def get_pixel_thres(pixels):
+	print (pixels.shape)
+	sorted_pix = pixels.flatten()
+	sorted_pix.sort()
+	for p in sorted_pix:
+		print (p)
+	a = 0 / 0
+	return 120
+			
 
 
 #Print the image highlighting the darker pixels. Update PIXEL_THRES if noise is also drawn
 def get_darker_pixel_positions(pixels):
 	print ("\nDarker Pixels Representation:")
+	avg_px = 0
 	for i in range(pixels.shape[0]):
 		repr = ""
 		for j in range(pixels.shape[1]):
 			if pixels[i][j] < PIX_THRES:
-				repr += '*' 
+				avg_px += pixels[i][j]	
+				repr += '.' 
 			else:
-				repr += '.'
+				repr += ' '
 		print (repr)
+	print ('avg pixel', avg_px / (pixels.shape[0] * pixels.shape[1]))
 
 
 def get_adjacent_box_ids(boxes, row, col):
@@ -170,9 +187,11 @@ def draw_rectangles_on_image(pixels, rectangles):
 #Creates images of the shape the model is trained on. Adds padding if necessary
 def create_new_images_from_boxes(pixels, rectangles):
 	image_id = 0
+	"""
 	folder_name = str(uuid.uuid4())
 	print ("Images stored in folder", folder_name)
-	#os.mkdir(os.path.join(GEN_FOLDER, folder_name))
+	os.mkdir(os.path.join(GEN_FOLDER, folder_name))
+	"""
 	for r in rectangles.values():
 		image_id += 1
 		new_image = list()
@@ -181,6 +200,7 @@ def create_new_images_from_boxes(pixels, rectangles):
 			for y in range(r.top, r.bottom + 1):
 				row_pixels.append(pixels[x][y] if pixels[x][y] < PIX_THRES else WHITE_PIXEL)
 			new_image.append(row_pixels)
+		"""
 		if len(new_image) < MODEL_SHAPE: #50 is the shape on which the model is trained
 			vert_pad_one_side = math.ceil((MODEL_SHAPE - len(new_image)) / 2.0)
 		else:
@@ -189,6 +209,8 @@ def create_new_images_from_boxes(pixels, rectangles):
 			horiz_pad_one_side = math.ceil((MODEL_SHAPE - len(new_image[0])) / 2.0)
 		else:
 			horiz_pad_one_side = 5 
+		"""
+		horiz_pad_one_side, vert_pad_one_side = 10, 10
 		new_image_horiz_padded = list()
 		for row in new_image:
 			new_image_horiz_padded.append([WHITE_PIXEL] * horiz_pad_one_side + row + [WHITE_PIXEL] * horiz_pad_one_side)
@@ -196,12 +218,10 @@ def create_new_images_from_boxes(pixels, rectangles):
 		new_image_both_padded = vert_pad + new_image_horiz_padded + vert_pad
 	
 		#magnified_image = cv2.resize(cv2.UMat(new_image), None, fx = MAG_FACTOR, fy = MAG_FACTOR)
-		"""
 		try:
-			imsave(os.path.join(GEN_FOLDER, folder_name, str(image_id) + '.jpeg'), new_image_both_padded)
+			imsave(os.path.join(GEN_FOLDER, sys.argv[3], str(image_id) + '.jpeg'), new_image_both_padded)
 		except:
 			pass
-		"""
 		r.image_matrix = new_image_both_padded
 		
 			
@@ -216,7 +236,8 @@ def predict(model, rectangles):
 	for r in rectangles.values():
 		img = imresize(r.image_matrix, (MODEL_SHAPE, MODEL_SHAPE))
 		res = model.predict(np.array([img, ]))
-		r.prediction = class_codes[class_argmax[np.argmax(res)]]
+		pred = class_codes[class_argmax[np.argmax(res)]]
+		r.prediction = pred if len(pred.split(' ')) == 1 else ''
 		#print (r.get_top_left(), r.get_bottom_right(), r.prediction)
 
 
@@ -224,6 +245,8 @@ if __name__=='__main__':
 	from time import time
 	start = time()
 	pixels = get_pixels(sys.argv[1])
+	#PIX_THRES = get_pixel_thres(pixels)
+	print ("Pixel Threshold", PIX_THRES)
 	#get_darker_pixel_positions(pixels)
 	rectangles = generate_boxes(pixels)
 	model = keras.models.load_model(sys.argv[2])

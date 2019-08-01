@@ -1,3 +1,4 @@
+from collections import defaultdict
 import math
 import sys
 import re
@@ -23,7 +24,7 @@ class Bound:
 class XPosMap:
 	def __init__(self):
 		self.max_x = 0
-		self.pos_map = dict()
+		self.pos_map = defaultdict(list)
 	
 	def print(self):
 		print ("\n\nmax_x", self.max_x)
@@ -45,8 +46,10 @@ def update_x_pos_batches(x_pos_map, cur_merged_batch):
 	if len(cur_merged_batch) > 0:
 		max_right = math.ceil(cur_merged_batch[-1].right / 100.0)
 
+		"""
 		for i in range(x_pos_map.max_x + 1, max_right + 1):
 			x_pos_map.pos_map[i] = []
+		"""
 
 		if max_right > x_pos_map.max_x: 
 			x_pos_map.max_x = max_right
@@ -105,7 +108,6 @@ def merge_bounds(bounds):
 	rect_bottoms = list() # Contains rectangle bottom points
 	for b in bounds:
 		rect_bottoms.append(b.bottom)
-
 	rect_bottoms = sorted(set(rect_bottoms)) # Sorting the rectangle bottoms in asc order
 
 	bounds.sort(key=lambda x: x.top) # Sorting bounds on rectangle tops, to batch all tops less than a rect bottom
@@ -140,6 +142,9 @@ def merge_bounds(bounds):
 			last_bound_of_next_batch = next_batched_bounds[-1]
 			cur_batch_bounds_in_range_for_first_bound_of_next_batch = get_bounds_in_range(first_bound_of_next_batch, x_pos_map)
 			cur_batch_bounds_in_range_for_last_bound_of_next_batch = get_bounds_in_range(last_bound_of_next_batch, x_pos_map) 
+
+			if not first_bound_of_next_batch or not last_bound_of_next_batch or not cur_batch_bounds_in_range_for_first_bound_of_next_batch or not cur_batch_bounds_in_range_for_last_bound_of_next_batch:
+				break
 
 			if ((first_bound_of_next_batch.top - cur_batch_bounds_in_range_for_first_bound_of_next_batch[0].bottom) < VERTICAL_THRES and (last_bound_of_next_batch.top < cur_batch_bounds_in_range_for_last_bound_of_next_batch[-1].bottom) < VERTICAL_THRES) or check_if_fraction(x_pos_map, first_bound_of_next_batch, last_bound_of_next_batch):
 				cur_merged_batch += batched_bounds[j][2]
@@ -218,8 +223,10 @@ def get_latex(rectangles):
 	bounds = list()
 	for r in rectangles.values():
 		bounds.append(Bound(str(r.prediction), max(1, r.left), max(1, r.top), r.right, r.bottom)) 
+	"""
 	for b in bounds:
 		print ("{},{},{},{},{}".format(b.word, b.left, b.top, b.right, b.bottom))
+	"""
 	if len(bounds) > 0:
 		set_vertical_thres(bounds)
 		merge_bounds(bounds)
