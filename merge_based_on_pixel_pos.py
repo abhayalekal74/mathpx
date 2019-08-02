@@ -221,7 +221,8 @@ def merge_bounds(bounds):
 
 def get_latex(rectangles):
 	bounds = list()
-	for r in rectangles.values():
+	#for r in rectangles.values():
+	for r in rectangles:
 		bounds.append(Bound(str(r.prediction), max(1, r.left), max(1, r.top), r.right, r.bottom)) 
 	"""
 	for b in bounds:
