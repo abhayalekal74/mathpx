@@ -1,4 +1,7 @@
 inftycdb/*
+__pycache__/
+modifiedImages/
+tess-based-ocr/extractedImages/
 enc-dec/
 *.zip
 !inftycdb/*.py
@@ -6,6 +9,8 @@ Math-OCR/
 generate*
 *.sw*
 char-recognition-model/image*
+char-recognition-model/outputs/
+data/
 char-recognition-model/nohup.out
 seshat/
 xerces-c-3*

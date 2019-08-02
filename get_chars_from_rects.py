@@ -18,6 +18,8 @@ OFFSET = 1
 GEN_FOLDER = 'generated'
 MODEL_SHAPE = 50
 WHITE_PIXEL = 255
+minW = 5
+minH = 5
 
 
 """
@@ -53,6 +55,7 @@ def get_pixels(image_path):
 	img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 	img = cv2.GaussianBlur(img, (3,3), 0)
 	img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 75, 10)
+	cv2.imwrite(os.path.join('modifiedImages', image_path.rsplit('/', 1)[1]), img)	
 	return img 
 
 
@@ -159,7 +162,10 @@ def generate_boxes(pixels):
 	bounds = get_rect_bounds(rows, cols, boxes)
 	rectangles = dict()
 	for k, v in bounds.items():
-		rect = Rectangle(min(v[0]), min(v[1]), max(v[0]), max(v[1]))	
+		l, t, r, b = min(v[0]), min(v[1]), max(v[0]), max(v[1])
+		if (r - l) < minW or (b - t) < minH:
+			continue
+		rect = Rectangle(l, t, r, b)
 		rectangles[k] = rect	
 	"""
 	print ("\nRectangle bounds:")
@@ -186,6 +192,7 @@ def draw_rectangles_on_image(pixels, rectangles):
 
 #Creates images of the shape the model is trained on. Adds padding if necessary
 def create_new_images_from_boxes(pixels, rectangles):
+	folder_name = '9'
 	image_id = 0
 	"""
 	folder_name = str(uuid.uuid4())
@@ -219,7 +226,7 @@ def create_new_images_from_boxes(pixels, rectangles):
 	
 		#magnified_image = cv2.resize(cv2.UMat(new_image), None, fx = MAG_FACTOR, fy = MAG_FACTOR)
 		try:
-			imsave(os.path.join(GEN_FOLDER, sys.argv[3], str(image_id) + '.jpeg'), new_image_both_padded)
+			imsave(os.path.join(GEN_FOLDER, folder_name, str(image_id) + '.jpeg'), new_image_both_padded)
 		except:
 			pass
 		r.image_matrix = new_image_both_padded
@@ -244,12 +251,12 @@ def predict(model, rectangles):
 if __name__=='__main__':
 	from time import time
 	start = time()
-	pixels = get_pixels(sys.argv[1])
+	model = keras.models.load_model(sys.argv[1])
+	pixels = get_pixels(sys.argv[2])
 	#PIX_THRES = get_pixel_thres(pixels)
 	print ("Pixel Threshold", PIX_THRES)
 	#get_darker_pixel_positions(pixels)
 	rectangles = generate_boxes(pixels)
-	model = keras.models.load_model(sys.argv[2])
 	#draw_rectangles_on_image(pixels, rectangles)
 	create_new_images_from_boxes(pixels, rectangles)
 	predict(model, rectangles)
