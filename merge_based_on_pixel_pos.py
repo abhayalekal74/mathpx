@@ -72,7 +72,7 @@ class LineBound:
 					continue
 				if chars and chars[-1] == '-' and cb.c == '-':
 					chars[-1] = '='
-				elif cb.c != 'frac': # TODO change to else
+				else:
 					chars.append(cb.c)
 			words.append("".join(chars))
 		print(" ".join(words))
@@ -126,80 +126,13 @@ def merge_bounds(char_bounds):
 					visited[j] = 1
 			lb.addWordBound(wb)
 		line_bounds.append(lb)
+
+	for lb in line_bounds:
+		lb.print()
 	print ("\n\nOCR Output:\n")
 	for lb in line_bounds:
 		lb.latex()			
 	print ()
-
-
-def merge_bounds_2(char_bounds):
-	# Grouping all characters within a line	
-	char_bottoms = list()
-	for b in char_bounds:
-		char_bottoms.append(b.b)
-	char_bottoms_sorted = sorted(set(char_bottoms)) 
-
-	char_bottoms = list()
-
-	print (char_bottoms_sorted, len(char_bottoms_sorted))
-	
-	for i in range(len(char_bottoms_sorted)):
-		if ((i + 1) < len(char_bottoms_sorted)) and ((char_bottoms_sorted[i + 1] - char_bottoms_sorted[i]) <= VERTICAL_THRES):
-			continue
-		char_bottoms.append(char_bottoms_sorted[i])
-	print (char_bottoms, len(char_bottoms))
-
-	char_bounds.sort(key=lambda x: x.t) 
-
-	char_bot_counter, char_bounds_counter = 0, 0
-
-	line_char_batches = list() 
-
-	while char_bot_counter < len(char_bottoms) and char_bounds_counter < len(char_bounds):
-		char_batch = list()
-		while char_bounds_counter < len(char_bounds) and char_bottoms[char_bot_counter] >= char_bounds[char_bounds_counter].t:
-			cur_char = char_bounds[char_bounds_counter]
-			char_bounds_counter += 1
-			if cur_char.c == "frac" and cur_char.r - cur_char.l <= CHAR_SIZE:
-				continue
-			char_batch.append(cur_char)
-		if len(char_batch) > 0:
-			char_batch.sort(key=lambda x: x.l)
-			line_char_batches.append(char_batch)
-		char_bot_counter += 1
-
-	# Lines are already vertically ordered
-	# Characters are already horizontally ordered
-	# Grouping words within grouped lines
-	line_bounds = list()
-	for char_batch in line_char_batches:
-		lb = LineBound()	
-		i = 0
-		while i < len(char_batch):
-			char_bound = char_batch[i]
-			i += 1
-			if char_bound.bound_merged:
-				continue
-			wb = WordBound()
-			char_bound.bound_merged = True
-			wb.addCharBound(char_bound)
-			j = i # i is already incremented
-			while j < len(char_batch):
-				add_char = char_batch[j]	
-				if not add_char.bound_merged:
-					if (add_char.l - char_bound.r < HORIZ_THRES): 
-						if checkIfTwoCharactersAreInSameLine(char_bound, add_char):
-							add_char.bound_merged = True
-							wb.addCharBound(add_char)
-					else: # Breaking only if next_char is farther away from horiz_thres. Since they are sorted by x, all subsequent chars are farther than horiz_thres
-						break
-				j += 1			
-			lb.addWordBound(wb)
-		line_bounds.append(lb)
-	for lb in line_bounds:
-		lb.print()
-	for lb in line_bounds:
-		lb.latex()			
 	
 def get_latex(rectangles):
 	char_bounds = list()
