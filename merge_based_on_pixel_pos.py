@@ -1,7 +1,10 @@
 from collections import defaultdict
+import tensorflow as tf
 import math
 import sys
 import re
+
+tf.logging.set_verbosity(tf.logging.FATAL)
 
 VERTICAL_THRES = 1000 # lt is used, so keep the VERTICAL_THRES as desired_val + 1 
 CHAR_SIZE = 100
@@ -69,7 +72,7 @@ class LineBound:
 					continue
 				if chars and chars[-1] == '-' and cb.c == '-':
 					chars[-1] = '='
-				else:
+				elif cb.c != 'frac': # TODO change to else
 					chars.append(cb.c)
 			words.append("".join(chars))
 		print(" ".join(words))
@@ -84,7 +87,7 @@ def set_vertical_thres(char_bounds):
 	CHAR_SIZE = math.ceil(sum / (len(char_bounds)))
 	VERTICAL_THRES = (CHAR_SIZE / 3) + 1 
 	HORIZ_THRES = math.ceil(VERTICAL_THRES / 2) + 1
-	print ("CHAR_SIZE: {}, VERTICAL_THRES: {}, HORIZ_THRES: {}".format(CHAR_SIZE, VERTICAL_THRES, HORIZ_THRES))
+	print ("\nCHAR_SIZE: {}, VERTICAL_THRES: {}, HORIZ_THRES: {}".format(CHAR_SIZE, VERTICAL_THRES, HORIZ_THRES))
 
 
 def checkIfTwoCharactersAreInSameLine(cur_char, next_char):
@@ -123,8 +126,10 @@ def merge_bounds(char_bounds):
 					visited[j] = 1
 			lb.addWordBound(wb)
 		line_bounds.append(lb)
+	print ("\n\nOCR Output:\n")
 	for lb in line_bounds:
 		lb.latex()			
+	print ()
 
 
 def merge_bounds_2(char_bounds):

@@ -66,7 +66,7 @@ def getContours(imgPath):
 	img = cv2.GaussianBlur(img, (3,3), 0)
 	img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 75, 10)
 	skewAngle = getSkew(img)
-	print ("skewAngle", skewAngle)
+	print ("\nskewAngle", skewAngle)
 	img = deskew(img, skewAngle)
 	contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 	return img, contours
@@ -114,9 +114,11 @@ if __name__=='__main__':
 	s5 = time.time()
 	get_latex(rectangles)
 	s6 = time.time()
+	"""
 	print ("Total time", (s6 - s1) * 1000)
 	print ("Model load", (s2 - s1) * 1000)
 	print ("getContours", (s3 - s2) * 1000)
 	print ("getBoundingRects", (s4 - s3) * 1000)
 	print ("predict", (s5 - s4) * 1000)
 	print ("get latex", (s6 - s5) * 1000)
+	"""
