@@ -31,9 +31,27 @@ class WordBound:
 		self.t = 0
 		self.r = 0
 		self.b = 0
+		self.has_fraction = False
 
 	def addCharBound(self, charBound):
-		self.charBounds.append(charBound)
+		# If character is the line between numerator and denominator, it should be at least 1.8 times char_size
+		if charBound.c == '-' and (charBound.r - charBound.l) > 1.8 * CHAR_SIZE:
+			charBound.c = 'frac'
+		# If two consecutive '-', replace with '='
+		elif self.charBounds and self.charBounds[-1] == '-' and charBound.c == '-':
+			self.charBounds[-1].c = '='
+		if charBound.c == 'frac':
+			self.has_fraction = True
+		if not self.charBounds or not self.charBounds[-1] == '=':
+			self.charBounds.append(charBound)
+		self.calcWordBounds()
+
+	def removeCharBounds(self, charBounds):
+		for charBound in charBounds:
+			try:
+				self.charBounds.remove(charBound)
+			except ValueError:
+				pass
 		self.calcWordBounds()
 
 	def calcWordBounds(self):
@@ -41,6 +59,36 @@ class WordBound:
 		self.t = min([charBound.t for charBound in self.charBounds])
 		self.r = max([charBound.r for charBound in self.charBounds])
 		self.b = max([charBound.b for charBound in self.charBounds])
+
+	def get_all_chars_in_x_range(self, l, r):
+		chars = list()
+		for cb in self.charBounds:
+			if cb.l >= l and cb.r <= r:
+				chars.append(cb)
+		return chars
+
+	def latex(self):
+		chars = list()
+		if self.has_fraction and len(self.charBounds) > 1:
+			for cb in self.charBounds:
+				if cb.c == 'frac':
+					charBoundsInRange = self.get_all_chars_in_x_range(cb.l, cb.r)
+					if charBoundsInRange:
+						numerator = list()
+						denominator = list()
+						for cbir in charBoundsInRange:
+							if cbir.b <= cb.t:	
+								numerator.append(cbir.c)		
+							else:
+								denominator.append(cbir.c)
+						fractionLatex = "frac({} / {})".format("".join(numerator), "".join(denominator))
+						fractionCb = CharBound(fractionLatex, cb.l, cb.t, cb.r, cb.b)
+						self.addCharBound(fractionCb)
+					charBoundsInRange.append(cb)
+					self.removeCharBounds(charBoundsInRange)
+		for cb in self.charBounds:
+			chars.append(cb.c)
+		return "".join(chars)
 
 	def print(self):
 		print ("\tWordBound: {}, {}, {}, {}".format(self.l, self.t, self.r, self.b))
@@ -66,15 +114,7 @@ class LineBound:
 	def latex(self):
 		words = list()
 		for wb in self.wordBounds:
-			chars = list()
-			for cb in wb.charBounds:
-				if cb.r - cb.l == wb.r - wb.l and cb.c == 'frac':
-					continue
-				if chars and chars[-1] == '-' and cb.c == '-':
-					chars[-1] = '='
-				else:
-					chars.append(cb.c)
-			words.append("".join(chars))
+			words.append(wb.latex())
 		print(" ".join(words))
 
 def set_vertical_thres(char_bounds):
