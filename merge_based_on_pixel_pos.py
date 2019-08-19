@@ -9,8 +9,8 @@ HORIZ_THRES = 16
 
 
 class CharBound:
-	def __init__(self, w, l, t, r, b):
-		self.w = w
+	def __init__(self, c, l, t, r, b):
+		self.c = c
 		self.l =  l
 		self.t = t
 		self.r = r
@@ -18,7 +18,7 @@ class CharBound:
 		self.bound_merged = False
 
 	def print(self):
-		print ("\t\tCharBound: {}, {}, {}, {}, {}, {}".format(self.w, self.l, self.t, self.r, self.b, self.bound_merged))
+		print ("\t\tCharBound: {}, {}, {}, {}, {}, {}".format(self.c, self.l, self.t, self.r, self.b, self.bound_merged))
 
 
 class WordBound:
@@ -61,13 +61,18 @@ class LineBound:
 			wb.print()
 
 	def latex(self):
-		latex = list()
+		words = list()
 		for wb in self.wordBounds:
-			words = list()
+			chars = list()
 			for cb in wb.charBounds:
-				words.append(cb.w)
-			latex.append("".join(words))
-		print(" ".join(latex))
+				if cb.r - cb.l == wb.r - wb.l and cb.c == 'frac':
+					continue
+				if chars and chars[-1] == '-' and cb.c == '-':
+					chars[-1] = '='
+				else:
+					chars.append(cb.c)
+			words.append("".join(chars))
+		print(" ".join(words))
 
 def set_vertical_thres(char_bounds):
 	global VERTICAL_THRES
@@ -87,6 +92,42 @@ def checkIfTwoCharactersAreInSameLine(cur_char, next_char):
 
 
 def merge_bounds(char_bounds):
+	# Assigning line index based on y co-ordinate
+	char_bounds.sort(key=lambda cb: cb.t)
+	line_index = 0
+	y_indiced_line_bounds = defaultdict(list)
+	y_indiced_line_bounds[line_index].append(char_bounds[0])	
+	for cb in char_bounds[1:]:
+		if cb.t - y_indiced_line_bounds[line_index][-1].b > VERTICAL_THRES:
+			line_index += 1
+		y_indiced_line_bounds[line_index].append(cb)
+	
+
+	line_bounds = list()
+	# Assigning word index based on x co-ordinate
+	for ind, cbs in y_indiced_line_bounds.items():
+		lb = LineBound()
+		cbs.sort(key=lambda cb: cb.l)
+		visited = [0] * len(cbs)	
+		for i in range(len(cbs)):
+			if visited[i] == 1:
+				continue
+			wb = WordBound()
+			wb.addCharBound(cbs[i])
+			visited[i] = 1
+			for j in range(i + 1, len(cbs)):
+				if visited[j] == 1:
+					continue
+				if cbs[j].l - wb.r <= HORIZ_THRES and checkIfTwoCharactersAreInSameLine(wb, cbs[j]):
+					wb.addCharBound(cbs[j])
+					visited[j] = 1
+			lb.addWordBound(wb)
+		line_bounds.append(lb)
+	for lb in line_bounds:
+		lb.latex()			
+
+
+def merge_bounds_2(char_bounds):
 	# Grouping all characters within a line	
 	char_bottoms = list()
 	for b in char_bounds:
@@ -114,7 +155,7 @@ def merge_bounds(char_bounds):
 		while char_bounds_counter < len(char_bounds) and char_bottoms[char_bot_counter] >= char_bounds[char_bounds_counter].t:
 			cur_char = char_bounds[char_bounds_counter]
 			char_bounds_counter += 1
-			if cur_char.w == "frac" and cur_char.r - cur_char.l <= CHAR_SIZE:
+			if cur_char.c == "frac" and cur_char.r - cur_char.l <= CHAR_SIZE:
 				continue
 			char_batch.append(cur_char)
 		if len(char_batch) > 0:
