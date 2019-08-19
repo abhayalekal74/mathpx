@@ -37,9 +37,6 @@ class WordBound:
 		# If character is the line between numerator and denominator, it should be at least 1.8 times char_size
 		if charBound.c == '-' and (charBound.r - charBound.l) > 1.8 * CHAR_SIZE:
 			charBound.c = 'frac'
-		# If two consecutive '-', replace with '='
-		elif self.charBounds and self.charBounds[-1] == '-' and charBound.c == '-':
-			self.charBounds[-1].c = '='
 		if charBound.c == 'frac':
 			self.has_fraction = True
 		if not self.charBounds or not self.charBounds[-1] == '=':
@@ -72,6 +69,8 @@ class WordBound:
 		if self.has_fraction and len(self.charBounds) > 1:
 			for cb in self.charBounds:
 				if cb.c == 'frac':
+					if cb.r - cb.l == self.r - self.l and cb.b - cb.t == self.b - self.t and len(self.charBounds) > 1:
+						continue
 					charBoundsInRange = self.get_all_chars_in_x_range(cb.l, cb.r)
 					if charBoundsInRange:
 						numerator = list()
@@ -87,6 +86,12 @@ class WordBound:
 					charBoundsInRange.append(cb)
 					self.removeCharBounds(charBoundsInRange)
 		for cb in self.charBounds:
+			# If two consecutive '-', replace with '='
+			if chars and chars[-1] == '-' and cb.c == '-':
+				chars[-1] = '='
+				continue
+			if cb.c == 'frac' and cb.r - cb.l == self.r - self.l and cb.b - cb.t == self.b - self.t and len(self.charBounds) > 1:
+				continue
 			chars.append(cb.c)
 		return "".join(chars)
 

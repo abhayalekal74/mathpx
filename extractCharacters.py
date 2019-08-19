@@ -64,7 +64,7 @@ def deskew(img, skewAngle):
 def getContours(imgPath):
 	img = cv2.imread(imgPath, cv2.IMREAD_GRAYSCALE)
 	img = cv2.GaussianBlur(img, (3,3), 0)
-	img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 75, 10)
+	img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 475, 10)
 	skewAngle = getSkew(img)
 	print ("\nskewAngle", skewAngle)
 	img = deskew(img, skewAngle)
@@ -98,7 +98,7 @@ def predict(model, rectangles):
 	res = model.predict(imgs)
 	for i in range(len(res)):
 		pred = class_codes[class_argmax[np.argmax(res[i])]]
-		if "Arrow" in pred:
+		if "rightarrow" in pred or "leftarrow" in pred:
 			pred = "frac"
 		rectangles[i].prediction = pred if len(pred.split(" ")) == 1 else ''
 
