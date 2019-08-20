@@ -18,10 +18,10 @@ class CharBound:
 		self.t = t
 		self.r = r
 		self.b = b
-		self.bound_merged = False
+		self.bounds_merged = False
 
 	def print(self):
-		print ("\t\tCharBound: {}, {}, {}, {}, {}, {}".format(self.c, self.l, self.t, self.r, self.b, self.bound_merged))
+		print ("\t\tCharBound: {}, {}, {}, {}, {}, {}".format(self.c, self.l, self.t, self.r, self.b, self.bounds_merged))
 
 
 class WordBound:
@@ -39,17 +39,16 @@ class WordBound:
 			charBound.c = 'frac'
 		if charBound.c == 'frac':
 			self.has_fraction = True
-		if not self.charBounds or not self.charBounds[-1] == '=':
-			self.charBounds.append(charBound)
+		self.charBounds.append(charBound)
 		self.calcWordBounds()
 
 	def removeCharBounds(self, charBounds):
 		for charBound in charBounds:
-			try:
-				self.charBounds.remove(charBound)
-			except ValueError:
-				pass
+			self.charBounds.remove(charBound)
 		self.calcWordBounds()
+
+	def hasChars(self):
+		return len(self.charBounds) > 0
 
 	def calcWordBounds(self):
 		self.l = min([charBound.l for charBound in self.charBounds])
@@ -64,33 +63,46 @@ class WordBound:
 				chars.append(cb)
 		return chars
 
-	def latex(self):
-		chars = list()
-		if self.has_fraction and len(self.charBounds) > 1:
+	def orderChars(self):
+		self.charBounds.sort(key=lambda x: x.l)
+
+	def mergeCharFractions(self):
+		removeChars = list()
+		if self.has_fraction:
 			for cb in self.charBounds:
 				if cb.c == 'frac':
+					# Remove false fraction divider
 					if cb.r - cb.l == self.r - self.l and cb.b - cb.t == self.b - self.t and len(self.charBounds) > 1:
+						removeChars.append(cb)
 						continue
+					# Replace all chars within fraction range with fraction latex
 					charBoundsInRange = self.get_all_chars_in_x_range(cb.l, cb.r)
 					if charBoundsInRange:
-						numerator = list()
-						denominator = list()
+						numerator = WordBound() 
+						denominator = WordBound()
 						for cbir in charBoundsInRange:
+							if cbir == cb: # Should not include fraction in numerator or denominator
+								continue
 							if cbir.b <= cb.t:	
-								numerator.append(cbir.c)		
+								numerator.addCharBound(cbir)		
 							else:
-								denominator.append(cbir.c)
-						fractionLatex = "frac({} / {})".format("".join(numerator), "".join(denominator))
-						fractionCb = CharBound(fractionLatex, cb.l, cb.t, cb.r, cb.b)
-						self.addCharBound(fractionCb)
-					charBoundsInRange.append(cb)
-					self.removeCharBounds(charBoundsInRange)
+								denominator.addCharBound(cbir)
+						if numerator.hasChars() or denominator.hasChars():
+							numerator.orderChars()
+							denominator.orderChars()
+							fractionLatex = "frac({} / {})".format(numerator.latex(), denominator.latex())
+							fractionCb = CharBound(fractionLatex, cb.l, cb.t, cb.r, cb.b)
+							self.addCharBound(fractionCb)
+					removeChars += charBoundsInRange
+		self.removeCharBounds(removeChars)
+		self.orderChars()
+	
+	def latex(self):
+		chars = list()
 		for cb in self.charBounds:
 			# If two consecutive '-', replace with '='
 			if chars and chars[-1] == '-' and cb.c == '-':
 				chars[-1] = '='
-				continue
-			if cb.c == 'frac' and cb.r - cb.l == self.r - self.l and cb.b - cb.t == self.b - self.t and len(self.charBounds) > 1:
 				continue
 			chars.append(cb.c)
 		return "".join(chars)
@@ -106,7 +118,6 @@ class LineBound:
 
 	def addWordBound(self, wordBound):
 		self.wordBounds.append(wordBound)
-		self.orderWords()
 
 	def orderWords(self):
 		self.wordBounds.sort(key=lambda x: x.l)
@@ -118,6 +129,9 @@ class LineBound:
 
 	def latex(self):
 		words = list()
+		for wb in self.wordBounds:
+			wb.mergeCharFractions()
+		self.orderWords()
 		for wb in self.wordBounds:
 			words.append(wb.latex())
 		print(" ".join(words))
@@ -156,24 +170,21 @@ def merge_bounds(char_bounds):
 	for ind, cbs in y_indiced_line_bounds.items():
 		lb = LineBound()
 		cbs.sort(key=lambda cb: cb.l)
-		visited = [0] * len(cbs)	
 		for i in range(len(cbs)):
-			if visited[i] == 1:
+			if cbs[i].bounds_merged:
 				continue
 			wb = WordBound()
 			wb.addCharBound(cbs[i])
-			visited[i] = 1
+			cbs[i].bounds_merged = True
 			for j in range(i + 1, len(cbs)):
-				if visited[j] == 1:
+				if cbs[j].bounds_merged:
 					continue
 				if cbs[j].l - wb.r <= HORIZ_THRES and checkIfTwoCharactersAreInSameLine(wb, cbs[j]):
 					wb.addCharBound(cbs[j])
-					visited[j] = 1
+					cbs[j].bounds_merged = True
 			lb.addWordBound(wb)
 		line_bounds.append(lb)
 
-	for lb in line_bounds:
-		lb.print()
 	print ("\n\nOCR Output:\n")
 	for lb in line_bounds:
 		lb.latex()			
