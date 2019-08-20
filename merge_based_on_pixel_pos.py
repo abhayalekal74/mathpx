@@ -44,7 +44,10 @@ class WordBound:
 
 	def removeCharBounds(self, charBounds):
 		for charBound in charBounds:
-			self.charBounds.remove(charBound)
+			try:
+				self.charBounds.remove(charBound)
+			except:
+				pass
 		self.calcWordBounds()
 
 	def hasChars(self):
