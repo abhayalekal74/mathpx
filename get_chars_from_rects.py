@@ -106,18 +106,9 @@ def generate_boxes(pixels):
 
 #To be used to check if the box creation algo is working fine
 def draw_rectangles_on_image(pixels, rectangles):
-	'''
-	for rectangle in rectangles:
-		cv2.rectangle(pixels, rectangle.get_top_left(), rectangle.get_bottom_right(), (0, 0, 0))
-	'''
 	for r in rectangles:
-		for x in range(r.left, r.right + 1):
-			pixels[x][r.top] = 0
-			pixels[x][r.bottom] = 0
-		for y in range(r.top, r.bottom + 1):
-			pixels[r.left][y] = 0
-			pixels[r.right][y] = 0
-
+		cv2.rectangle(pixels, (r.left, r.top), (r.right, r.bottom), (150, 150, 150))
+	cv2.imwrite('modifiedImages/bounds.jpeg', pixels)
 
 #Creates images of the shape the model is trained on. Adds padding if necessary
 def create_new_images_from_boxes(pixels, rectangles):
@@ -126,7 +117,6 @@ def create_new_images_from_boxes(pixels, rectangles):
 		image_id += 1
 		padding = 10
 		new_image = np.pad(pixels[r.left : r.right + 1, r.top : r.bottom + 1], (padding, padding), 'constant', constant_values=(255, 255)) 
-		#magnified_image = cv2.resize(cv2.UMat(new_image), None, fx = MAG_FACTOR, fy = MAG_FACTOR)
 		try:
 			imsave(os.path.join(GEN_FOLDER, '9', str(image_id) + '.jpeg'), new_image)
 		except:
@@ -140,6 +130,7 @@ if __name__=='__main__':
 	pixels = getContours(sys.argv[2])[0]
 	rectangles = generate_boxes(pixels)
 	create_new_images_from_boxes(pixels, rectangles)
+	draw_rectangles_on_image(pixels, rectangles)
 	predict(model, rectangles)
 	get_latex(rectangles)
 	print ("Total time taken", str((time() - start) * 1000) + " ms")
