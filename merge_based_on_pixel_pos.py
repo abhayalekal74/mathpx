@@ -51,10 +51,13 @@ class WordBound:
 		return len(self.charBounds) > 0
 
 	def calcWordBounds(self):
-		self.l = min([charBound.l for charBound in self.charBounds])
-		self.t = min([charBound.t for charBound in self.charBounds])
-		self.r = max([charBound.r for charBound in self.charBounds])
-		self.b = max([charBound.b for charBound in self.charBounds])
+		try:
+			self.l = min([charBound.l for charBound in self.charBounds])
+			self.t = min([charBound.t for charBound in self.charBounds])
+			self.r = max([charBound.r for charBound in self.charBounds])
+			self.b = max([charBound.b for charBound in self.charBounds])
+		except:
+			self.l, self.t, self.r, self.b = 0, 0, 0, 0
 
 	def get_all_chars_in_x_range(self, l, r):
 		chars = list()
@@ -149,9 +152,14 @@ def set_vertical_thres(char_bounds):
 	print ("\nCHAR_SIZE: {}, VERTICAL_THRES: {}, HORIZ_THRES: {}".format(CHAR_SIZE, VERTICAL_THRES, HORIZ_THRES))
 
 
-def checkIfTwoCharactersAreInSameLine(cur_char, next_char):
-	return (cur_char.t >= next_char.t and cur_char.t <= next_char.b) or (cur_char.b >= next_char.t and cur_char.b <= next_char.b) or (next_char.t >= cur_char.t and next_char.t <= cur_char.b) or (next_char.t >= cur_char.t and next_char.t <= cur_char.b)
-
+def check_if_next_char_in_same_line(cur_word, cur_char, next_char):
+	sameLine = (cur_word.t >= next_char.t and cur_word.t <= next_char.b) or (cur_word.b >= next_char.t and cur_word.b <= next_char.b) or (next_char.t >= cur_word.t and next_char.t <= cur_word.b) or (next_char.t >= cur_word.t and next_char.t <= cur_word.b)
+	"""
+	# See if next char is power
+	if 'frac' not in cur_char.c and 'frac' not in next_char.c and next_char.b >= cur_char.t and next_char.b < cur_char.t + (cur_char.b - cur_char.t) / 3:
+		next_char.c = '^' + next_char.c
+	"""
+	return sameLine
 
 def merge_bounds(char_bounds):
 	# Assigning line index based on y co-ordinate
@@ -179,12 +187,14 @@ def merge_bounds(char_bounds):
 			for j in range(i + 1, len(cbs)):
 				if cbs[j].bounds_merged:
 					continue
-				if cbs[j].l - wb.r <= HORIZ_THRES and checkIfTwoCharactersAreInSameLine(wb, cbs[j]):
+				if cbs[j].l - wb.r <= HORIZ_THRES and check_if_next_char_in_same_line(wb, wb.charBounds[-1], cbs[j]):
 					wb.addCharBound(cbs[j])
 					cbs[j].bounds_merged = True
 			lb.addWordBound(wb)
 		line_bounds.append(lb)
 
+	for lb in line_bounds:
+		lb.print()			
 	print ("\n\nOCR Output:\n")
 	for lb in line_bounds:
 		lb.latex()			
