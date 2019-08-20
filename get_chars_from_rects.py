@@ -15,7 +15,7 @@ import keras
 
 
 PIX_THRES = 120 
-OFFSET = 1 
+OFFSET = 2 
 GEN_FOLDER = 'generated'
 MODEL_SHAPE = 50
 WHITE_PIXEL = 255
@@ -142,7 +142,7 @@ def get_rect_bounds(rows, cols, boxes):
 	bounds = dict()
 	for row in range(OFFSET, rows + OFFSET):
 		for col in range(OFFSET, cols + OFFSET):
-			if boxes[row][col] != 0:
+			if boxes[row][col] != 0: # boxes[row][col] contains auto_box_id simplified
 				try:
 					points = bounds[boxes[row][col]]
 				except KeyError:
@@ -195,42 +195,16 @@ def draw_rectangles_on_image(pixels, rectangles):
 def create_new_images_from_boxes(pixels, rectangles):
 	folder_name = '9'
 	image_id = 0
-	"""
-	folder_name = str(uuid.uuid4())
-	print ("Images stored in folder", folder_name)
-	os.mkdir(os.path.join(GEN_FOLDER, folder_name))
-	"""
 	for r in rectangles:
 		image_id += 1
-		new_image = list()
-		for x in range(r.left, r.right + 1):
-			row_pixels = list()
-			for y in range(r.top, r.bottom + 1):
-				row_pixels.append(pixels[x][y] if pixels[x][y] < PIX_THRES else WHITE_PIXEL)
-			new_image.append(row_pixels)
-		"""
-		if len(new_image) < MODEL_SHAPE: #50 is the shape on which the model is trained
-			vert_pad_one_side = math.ceil((MODEL_SHAPE - len(new_image)) / 2.0)
-		else:
-			vert_pad_one_side = 5 
-		if len(new_image[0]) < MODEL_SHAPE: #50 is the shape on which the model is trained
-			horiz_pad_one_side = math.ceil((MODEL_SHAPE - len(new_image[0])) / 2.0)
-		else:
-			horiz_pad_one_side = 5 
-		"""
-		horiz_pad_one_side, vert_pad_one_side = 10, 10
-		new_image_horiz_padded = list()
-		for row in new_image:
-			new_image_horiz_padded.append([WHITE_PIXEL] * horiz_pad_one_side + row + [WHITE_PIXEL] * horiz_pad_one_side)
-		vert_pad = [[WHITE_PIXEL] * len(new_image_horiz_padded[0])] * vert_pad_one_side
-		new_image_both_padded = vert_pad + new_image_horiz_padded + vert_pad
-	
+		padding = 10
+		new_image = np.pad(pixels[r.left : r.right + 1, r.top : r.bottom + 1], (padding, padding), 'constant', constant_values=(255, 255)) 
 		#magnified_image = cv2.resize(cv2.UMat(new_image), None, fx = MAG_FACTOR, fy = MAG_FACTOR)
 		try:
-			imsave(os.path.join(GEN_FOLDER, folder_name, str(image_id) + '.jpeg'), new_image_both_padded)
+			imsave(os.path.join(GEN_FOLDER, folder_name, str(image_id) + '.jpeg'), new_image)
 		except:
 			pass
-		r.image_matrix = new_image_both_padded
+		r.image_matrix = new_image
 		
 			
 # Predict chars in the rectangles detected
