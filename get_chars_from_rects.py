@@ -1,5 +1,5 @@
 from collections import defaultdict 
-from extractCharacters import getContours
+from extractCharacters import getContours, predict
 import json
 import uuid
 import pickle
@@ -28,7 +28,7 @@ class Rectangle:
 		self.top = top
 		self.right = right
 		self.bottom = bottom
-		self.image_matrix = None
+		self.paddedPixelMatrix = None
 		self.prediction = None
 			
 def get_adjacent_box_ids(boxes, row, col):
@@ -131,23 +131,8 @@ def create_new_images_from_boxes(pixels, rectangles):
 			imsave(os.path.join(GEN_FOLDER, '9', str(image_id) + '.jpeg'), new_image)
 		except:
 			pass
-		r.image_matrix = new_image
+		r.paddedPixelMatrix = new_image
 		
-			
-# Predict chars in the rectangles detected
-def predict(model, rectangles):	
-	label_encoder = pickle.load(open('char-recognition-model/label_encoder.pkl', 'rb'))
-	with open('char-recognition-model/classcodes.json', 'r') as f:
-		class_codes = json.load(f)
-	class_argmax = {} # Storing encoding index
-	for c in label_encoder.classes_:
-		class_argmax[np.argmax(label_encoder.transform([[c,]]))] = c
-	for r in rectangles:
-		img = imresize(r.image_matrix, (MODEL_SHAPE, MODEL_SHAPE))
-		res = model.predict(np.array([img, ]))
-		pred = class_codes[class_argmax[np.argmax(res)]]
-		r.prediction = pred if len(pred.split(' ')) == 1 else ''
-
 if __name__=='__main__':
 	from time import time
 	start = time()
