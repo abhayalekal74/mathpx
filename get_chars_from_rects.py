@@ -1,4 +1,5 @@
 from collections import defaultdict 
+from extractCharacters import getContours
 import json
 import uuid
 import pickle
@@ -160,13 +161,13 @@ def generate_boxes(pixels):
 	get_adjacent_boxes(rows, cols, pixels, boxes, same_boxes)
 	simplify_boxes(rows, cols, boxes, same_boxes)
 	bounds = get_rect_bounds(rows, cols, boxes)
-	rectangles = dict()
+	rectangles = list()
 	for k, v in bounds.items():
 		l, t, r, b = min(v[0]), min(v[1]), max(v[0]), max(v[1])
 		if (r - l) < minW or (b - t) < minH:
 			continue
 		rect = Rectangle(l, t, r, b)
-		rectangles[k] = rect	
+		rectangles.append(rect)
 	"""
 	print ("\nRectangle bounds:")
 	for k, v in rectangles.items():
@@ -178,10 +179,10 @@ def generate_boxes(pixels):
 #To be used to check if the box creation algo is working fine
 def draw_rectangles_on_image(pixels, rectangles):
 	'''
-	for rectangle in rectangles.values():
+	for rectangle in rectangles:
 		cv2.rectangle(pixels, rectangle.get_top_left(), rectangle.get_bottom_right(), (0, 0, 0))
 	'''
-	for r in rectangles.values():
+	for r in rectangles:
 		for x in range(r.left, r.right + 1):
 			pixels[x][r.top] = 0
 			pixels[x][r.bottom] = 0
@@ -199,7 +200,7 @@ def create_new_images_from_boxes(pixels, rectangles):
 	print ("Images stored in folder", folder_name)
 	os.mkdir(os.path.join(GEN_FOLDER, folder_name))
 	"""
-	for r in rectangles.values():
+	for r in rectangles:
 		image_id += 1
 		new_image = list()
 		for x in range(r.left, r.right + 1):
@@ -240,7 +241,7 @@ def predict(model, rectangles):
 	class_argmax = {} # Storing encoding index
 	for c in label_encoder.classes_:
 		class_argmax[np.argmax(label_encoder.transform([[c,]]))] = c
-	for r in rectangles.values():
+	for r in rectangles:
 		img = imresize(r.image_matrix, (MODEL_SHAPE, MODEL_SHAPE))
 		res = model.predict(np.array([img, ]))
 		pred = class_codes[class_argmax[np.argmax(res)]]
@@ -252,7 +253,8 @@ if __name__=='__main__':
 	from time import time
 	start = time()
 	model = keras.models.load_model(sys.argv[1])
-	pixels = get_pixels(sys.argv[2])
+	#pixels = get_pixels(sys.argv[2])
+	pixels = getContours(sys.argv[2])[0]
 	#PIX_THRES = get_pixel_thres(pixels)
 	print ("Pixel Threshold", PIX_THRES)
 	#get_darker_pixel_positions(pixels)
