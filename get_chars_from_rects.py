@@ -22,10 +22,6 @@ WHITE_PIXEL = 255
 minW = 5
 minH = 5
 
-
-"""
-Rectangle class: holds coordinates, prediction and final padded image matrix
-"""
 class Rectangle:
 	def __init__(self, left, top, right, bottom):
 		self.left = left
@@ -34,59 +30,7 @@ class Rectangle:
 		self.bottom = bottom
 		self.image_matrix = None
 		self.prediction = None
-
-
-	def get_top_left(self):
-		return (self.left, self.top)
-
-
-	def get_bottom_right(self):
-		return (self.right, self.bottom)
-
-
-#Reading image, apply needed preprocessing steps here
-def get_pixels(image_path):
-	#img = imread(image_path, 'L')
-	#img = cv2.resize(img, None, fx=MAG_FACTOR, fy=MAG_FACTOR, interpolation=cv2.INTER_AREA)
-	# Apply dilation and erosion to remove some noise
-	#kernel = np.ones((1, 1), np.uint8)
-	#img = cv2.dilate(img, kernel, iterations=1)
-	#img = cv2.erode(img, kernel, iterations=1)
-	#img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-	img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-	img = cv2.GaussianBlur(img, (3,3), 0)
-	img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 75, 10)
-	cv2.imwrite(os.path.join('modifiedImages', image_path.rsplit('/', 1)[1]), img)	
-	return img 
-
-
-def get_pixel_thres(pixels):
-	print (pixels.shape)
-	sorted_pix = pixels.flatten()
-	sorted_pix.sort()
-	for p in sorted_pix:
-		print (p)
-	a = 0 / 0
-	return 120
 			
-
-
-#Print the image highlighting the darker pixels. Update PIXEL_THRES if noise is also drawn
-def get_darker_pixel_positions(pixels):
-	print ("\nDarker Pixels Representation:")
-	avg_px = 0
-	for i in range(pixels.shape[0]):
-		repr = ""
-		for j in range(pixels.shape[1]):
-			if pixels[i][j] < PIX_THRES:
-				avg_px += pixels[i][j]	
-				repr += '.' 
-			else:
-				repr += ' '
-		print (repr)
-	print ('avg pixel', avg_px / (pixels.shape[0] * pixels.shape[1]))
-
-
 def get_adjacent_box_ids(boxes, row, col):
 	adjacent_box_ids = []
 	for i in range(col - OFFSET, col + OFFSET + 1):
@@ -100,14 +44,7 @@ def get_adjacent_box_ids(boxes, row, col):
 
 #Get empty matrix of the shape of image + 2 * offset as padding
 def get_empty_matrix(rows, cols):
-	boxes = list()
-	for row in range(rows + OFFSET * 2):
-		zero_row = list()
-		for col in range(cols + OFFSET * 2):
-			zero_row.append(0)
-		boxes.append(zero_row)
-	return boxes
-
+	return np.zeros((rows + OFFSET * 2, cols + OFFSET * 2), dtype=list)
 
 #Assign same box ids to pixels adjacent to each other
 def get_adjacent_boxes(rows, cols, pixels, boxes, same_boxes):
@@ -139,15 +76,11 @@ def simplify_boxes(rows, cols, boxes, same_boxes):
 
 #Get rectangle bounds of simplified boxes (left, top, right, bottom)
 def get_rect_bounds(rows, cols, boxes):
-	bounds = dict()
+	bounds = defaultdict(lambda: [[], []])
 	for row in range(OFFSET, rows + OFFSET):
 		for col in range(OFFSET, cols + OFFSET):
 			if boxes[row][col] != 0: # boxes[row][col] contains auto_box_id simplified
-				try:
-					points = bounds[boxes[row][col]]
-				except KeyError:
-					points = [[], []]
-					bounds[boxes[row][col]] = points
+				points = bounds[boxes[row][col]]
 				points[0].append(row - OFFSET)
 				points[1].append(col - OFFSET)
 	return bounds
@@ -168,11 +101,6 @@ def generate_boxes(pixels):
 			continue
 		rect = Rectangle(l, t, r, b)
 		rectangles.append(rect)
-	"""
-	print ("\nRectangle bounds:")
-	for k, v in rectangles.items():
-		print ("RectID: {}\tPoints: {}, {}".format(k, v.get_top_left(), v.get_bottom_right()))
-	"""
 	return rectangles
 	
 
@@ -193,7 +121,6 @@ def draw_rectangles_on_image(pixels, rectangles):
 
 #Creates images of the shape the model is trained on. Adds padding if necessary
 def create_new_images_from_boxes(pixels, rectangles):
-	folder_name = '9'
 	image_id = 0
 	for r in rectangles:
 		image_id += 1
@@ -201,7 +128,7 @@ def create_new_images_from_boxes(pixels, rectangles):
 		new_image = np.pad(pixels[r.left : r.right + 1, r.top : r.bottom + 1], (padding, padding), 'constant', constant_values=(255, 255)) 
 		#magnified_image = cv2.resize(cv2.UMat(new_image), None, fx = MAG_FACTOR, fy = MAG_FACTOR)
 		try:
-			imsave(os.path.join(GEN_FOLDER, folder_name, str(image_id) + '.jpeg'), new_image)
+			imsave(os.path.join(GEN_FOLDER, '9', str(image_id) + '.jpeg'), new_image)
 		except:
 			pass
 		r.image_matrix = new_image
@@ -220,22 +147,14 @@ def predict(model, rectangles):
 		res = model.predict(np.array([img, ]))
 		pred = class_codes[class_argmax[np.argmax(res)]]
 		r.prediction = pred if len(pred.split(' ')) == 1 else ''
-		#print (r.get_top_left(), r.get_bottom_right(), r.prediction)
-
 
 if __name__=='__main__':
 	from time import time
 	start = time()
 	model = keras.models.load_model(sys.argv[1])
-	#pixels = get_pixels(sys.argv[2])
 	pixels = getContours(sys.argv[2])[0]
-	#PIX_THRES = get_pixel_thres(pixels)
-	print ("Pixel Threshold", PIX_THRES)
-	#get_darker_pixel_positions(pixels)
 	rectangles = generate_boxes(pixels)
-	#draw_rectangles_on_image(pixels, rectangles)
 	create_new_images_from_boxes(pixels, rectangles)
 	predict(model, rectangles)
 	get_latex(rectangles)
-	#get_darker_pixel_positions(pixels)
 	print ("Total time taken", str((time() - start) * 1000) + " ms")

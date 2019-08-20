@@ -114,8 +114,8 @@ if __name__=='__main__':
 	s5 = time.time()
 	get_latex(rectangles)
 	s6 = time.time()
-	"""
 	print ("Total time", (s6 - s1) * 1000)
+	"""
 	print ("Model load", (s2 - s1) * 1000)
 	print ("getContours", (s3 - s2) * 1000)
 	print ("getBoundingRects", (s4 - s3) * 1000)
