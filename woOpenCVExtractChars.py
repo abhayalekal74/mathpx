@@ -3,7 +3,7 @@ from extractCharacters import getContours, predict
 import json
 import uuid
 import pickle
-from merge_based_on_pixel_pos import get_latex
+from mergeChars import getLatex
 import math
 from scipy.misc import imread, imresize
 import cv2
@@ -132,5 +132,5 @@ if __name__=='__main__':
 	create_new_images_from_boxes(pixels, rectangles)
 	draw_rectangles_on_image(pixels, rectangles)
 	predict(model, rectangles)
-	get_latex(rectangles)
+	getLatex(rectangles)
 	print ("Total time taken", str((time() - start) * 1000) + " ms")

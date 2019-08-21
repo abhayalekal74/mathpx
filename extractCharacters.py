@@ -7,7 +7,7 @@ from scipy.misc import imresize
 import cv2
 import sys
 import numpy as np
-from merge_based_on_pixel_pos import get_latex
+from mergeChars import getLatex
 
 minH = 10 
 minW = 10
@@ -89,16 +89,16 @@ def getBoundingRects(img, contours):
 	
 
 def predict(model, rectangles):	
-	label_encoder = pickle.load(open('char-recognition-model/label_encoder.pkl', 'rb'))
+	labelEncoder = pickle.load(open('char-recognition-model/label_encoder.pkl', 'rb'))
 	with open('char-recognition-model/classcodes.json', 'r') as f:
-		class_codes = json.load(f)
-	class_argmax = {}
-	for c in label_encoder.classes_:
-		class_argmax[np.argmax(label_encoder.transform([[c,]]))] = c
+		classCodes = json.load(f)
+	classArgmax = {}
+	for c in labelEncoder.classes_:
+		classArgmax[np.argmax(labelEncoder.transform([[c,]]))] = c
 	imgs = np.array([imresize(r.paddedPixelMatrix, (modelShape, modelShape)) for r in rectangles])
 	res = model.predict(imgs)
 	for i in range(len(res)):
-		pred = class_codes[class_argmax[np.argmax(res[i])]]
+		pred = classCodes[classArgmax[np.argmax(res[i])]]
 		if "rightarrow" in pred or "leftarrow" in pred:
 			pred = "frac"
 		if ' ' in pred:
@@ -116,7 +116,7 @@ if __name__=='__main__':
 	s4 = time.time()
 	predict(model, rectangles)
 	s5 = time.time()
-	get_latex(rectangles)
+	getLatex(rectangles)
 	s6 = time.time()
 	print ("Total time", (s6 - s1) * 1000)
 	"""

@@ -18,10 +18,10 @@ class CharBound:
 		self.t = t
 		self.r = r
 		self.b = b
-		self.bounds_merged = False
+		self.boundsMerged = False
 
 	def print(self):
-		print ("\t\tCharBound: {}, {}, {}, {}, {}, {}".format(self.c, self.l, self.t, self.r, self.b, self.bounds_merged))
+		print ("\t\tCharBound: {}, {}, {}, {}, {}, {}".format(self.c, self.l, self.t, self.r, self.b, self.boundsMerged))
 
 
 class WordBound:
@@ -62,7 +62,7 @@ class WordBound:
 		except:
 			self.l, self.t, self.r, self.b = 0, 0, 0, 0
 
-	def get_all_chars_in_x_range(self, l, r):
+	def getAllCharsInXRange(self, l, r):
 		chars = list()
 		for cb in self.charBounds:
 			if cb.l >= l and cb.r <= r:
@@ -75,17 +75,17 @@ class WordBound:
 	def handlePowers(self):
 		y_offset = CHAR_SIZE / 3 
 		for i in range(1, len(self.charBounds)):
-			cur_char = self.charBounds[i - 1]
-			next_char = self.charBounds[i]
-			if 'frac' not in cur_char.c and 'frac' not in next_char.c and (next_char.b >= cur_char.t - y_offset) and next_char.b < cur_char.t + y_offset and next_char.t < cur_char.t:
-				next_char.c = ' {\pow ' + next_char.c + '} '
-			elif '{\pow' in cur_char.c:
-				if next_char.t < cur_char.b - y_offset and next_char.b < cur_char.b + y_offset:
-					next_char.c = cur_char.c[:-2] + next_char.c + '} '
-					cur_char.c = ''
-					next_char.l = cur_char.l
-					next_char.t = min(cur_char.t, next_char.t)
-					next_char.b = max(cur_char.b, next_char.b)
+			curChar = self.charBounds[i - 1]
+			nextChar = self.charBounds[i]
+			if 'frac' not in curChar.c and 'frac' not in nextChar.c and (nextChar.b >= curChar.t - y_offset) and nextChar.b < curChar.t + y_offset and nextChar.t < curChar.t:
+				nextChar.c = ' {\pow ' + nextChar.c + '} '
+			elif '{\pow' in curChar.c:
+				if nextChar.t < curChar.b - y_offset and nextChar.b < curChar.b + y_offset:
+					nextChar.c = curChar.c[:-2] + nextChar.c + '} '
+					curChar.c = ''
+					nextChar.l = curChar.l
+					nextChar.t = min(curChar.t, nextChar.t)
+					nextChar.b = max(curChar.b, nextChar.b)
 			
 
 	def mergeCharFractions(self):
@@ -98,7 +98,7 @@ class WordBound:
 						removeChars.append(cb)
 						continue
 					# Replace all chars within fraction range with fraction latex
-					charBoundsInRange = self.get_all_chars_in_x_range(cb.l, cb.r)
+					charBoundsInRange = self.getAllCharsInXRange(cb.l, cb.r)
 					if charBoundsInRange:
 						numerator = WordBound() 
 						denominator = WordBound()
@@ -159,75 +159,75 @@ class LineBound:
 			words.append(wb.latex())
 		print(" ".join(words))
 
-def set_vertical_thres(char_bounds):
+def setVerticalThres(charBounds):
 	global VERTICAL_THRES
 	global HORIZ_THRES
 	global CHAR_SIZE
 	sum = 0 
-	for bound in char_bounds:
+	for bound in charBounds:
 		sum += bound.b - bound.t
-	CHAR_SIZE = math.ceil(sum / (len(char_bounds)))
+	CHAR_SIZE = math.ceil(sum / (len(charBounds)))
 	VERTICAL_THRES = (CHAR_SIZE / 3) + 1 
 	HORIZ_THRES = math.ceil(VERTICAL_THRES / 2) + 1
 	print ("\nCHAR_SIZE: {}, VERTICAL_THRES: {}, HORIZ_THRES: {}".format(CHAR_SIZE, VERTICAL_THRES, HORIZ_THRES))
 
 
-def check_if_next_char_in_same_line(cur_word, cur_char, next_char):
-	sameLine = (cur_word.t >= next_char.t and cur_word.t <= next_char.b) or (cur_word.b >= next_char.t and cur_word.b <= next_char.b) or (next_char.t >= cur_word.t and next_char.t <= cur_word.b) or (next_char.t >= cur_word.t and next_char.t <= cur_word.b)
+def checkIfNextCharInSameLine(curWord, curChar, nextChar):
+	sameLine = (curWord.t >= nextChar.t and curWord.t <= nextChar.b) or (curWord.b >= nextChar.t and curWord.b <= nextChar.b) or (nextChar.t >= curWord.t and nextChar.t <= curWord.b) or (nextChar.t >= curWord.t and nextChar.t <= curWord.b)
 	"""
 	# See if next char is power
-	if 'frac' not in cur_char.c and 'frac' not in next_char.c and next_char.b >= cur_char.t and next_char.b < cur_char.t + (cur_char.b - cur_char.t) / 3:
-		next_char.c = '^' + next_char.c
+	if 'frac' not in curChar.c and 'frac' not in nextChar.c and nextChar.b >= curChar.t and nextChar.b < curChar.t + (curChar.b - curChar.t) / 3:
+		nextChar.c = '^' + nextChar.c
 	"""
 	return sameLine
 
-def merge_bounds(char_bounds):
+def mergeBounds(charBounds):
 	# Assigning line index based on y co-ordinate
-	char_bounds.sort(key=lambda cb: cb.t)
-	line_index = 0
-	y_indiced_line_bounds = defaultdict(list)
-	y_indiced_line_bounds[line_index].append(char_bounds[0])	
-	for cb in char_bounds[1:]:
-		if cb.t - y_indiced_line_bounds[line_index][-1].b > VERTICAL_THRES:
-			line_index += 1
-		y_indiced_line_bounds[line_index].append(cb)
+	charBounds.sort(key=lambda cb: cb.t)
+	lineIndex = 0
+	yIndicedLineBounds = defaultdict(list)
+	yIndicedLineBounds[lineIndex].append(charBounds[0])	
+	for cb in charBounds[1:]:
+		if cb.t - yIndicedLineBounds[lineIndex][-1].b > VERTICAL_THRES:
+			lineIndex += 1
+		yIndicedLineBounds[lineIndex].append(cb)
 	
 
-	line_bounds = list()
+	lineBounds = list()
 	# Assigning word index based on x co-ordinate
-	for ind, cbs in y_indiced_line_bounds.items():
+	for ind, cbs in yIndicedLineBounds.items():
 		lb = LineBound()
 		cbs.sort(key=lambda cb: cb.l)
 		for i in range(len(cbs)):
-			if cbs[i].bounds_merged:
+			if cbs[i].boundsMerged:
 				continue
 			wb = WordBound()
 			wb.addCharBound(cbs[i])
-			cbs[i].bounds_merged = True
+			cbs[i].boundsMerged = True
 			for j in range(i + 1, len(cbs)):
-				if cbs[j].bounds_merged:
+				if cbs[j].boundsMerged:
 					continue
-				if cbs[j].l - wb.r <= HORIZ_THRES and check_if_next_char_in_same_line(wb, wb.charBounds[-1], cbs[j]):
+				if cbs[j].l - wb.r <= HORIZ_THRES and checkIfNextCharInSameLine(wb, wb.charBounds[-1], cbs[j]):
 					wb.addCharBound(cbs[j])
-					cbs[j].bounds_merged = True
+					cbs[j].boundsMerged = True
 			lb.addWordBound(wb)
-		line_bounds.append(lb)
+		lineBounds.append(lb)
 
-	for lb in line_bounds:
+	for lb in lineBounds:
 		lb.print()			
 	print ("\n\nOCR Output:\n")
-	for lb in line_bounds:
+	for lb in lineBounds:
 		lb.latex()			
 	print ()
 	
-def get_latex(rectangles):
-	char_bounds = list()
+def getLatex(rectangles):
+	charBounds = list()
 	#for r in rectangles.values():
 	for r in rectangles:
 		if len(r.prediction) > 0:
-			char_bounds.append(CharBound(str(r.prediction), max(1, r.left), max(1, r.top), r.right, r.bottom)) 
-	if len(char_bounds) > 0:
-		set_vertical_thres(char_bounds)
-		merge_bounds(char_bounds)
+			charBounds.append(CharBound(str(r.prediction), max(1, r.left), max(1, r.top), r.right, r.bottom)) 
+	if len(charBounds) > 0:
+		setVerticalThres(charBounds)
+		mergeBounds(charBounds)
 	else:
-		print ("Could not read char_bounds")
+		print ("Could not read charBounds")

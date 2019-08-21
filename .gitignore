@@ -1,4 +1,8 @@
-inftycdb/*
+inftycdb/
+tess-based-ocr/ 
+tesseract-3.05.01/ 
+leptonica-1.78.0/ 
+pytesseract
 __pycache__/
 modifiedImages/
 tess-based-ocr/extractedImages/
