@@ -73,13 +73,14 @@ class WordBound:
 		self.charBounds.sort(key=lambda x: x.l)
 
 	def handlePowers(self):
+		y_offset = CHAR_SIZE / 3 
 		for i in range(1, len(self.charBounds)):
 			cur_char = self.charBounds[i - 1]
 			next_char = self.charBounds[i]
-			if 'frac' not in cur_char.c and 'frac' not in next_char.c and next_char.b >= cur_char.t and next_char.b < cur_char.t + (cur_char.b - cur_char.t) / 2 and next_char.t < cur_char.t:
+			if 'frac' not in cur_char.c and 'frac' not in next_char.c and (next_char.b >= cur_char.t - y_offset) and next_char.b < cur_char.t + y_offset and next_char.t < cur_char.t:
 				next_char.c = ' {\pow ' + next_char.c + '} '
 			elif '{\pow' in cur_char.c:
-				if next_char.t < cur_char.b - CHAR_SIZE / 2 and next_char.b < cur_char.b + (cur_char.b - cur_char.t) / 2:
+				if next_char.t < cur_char.b - y_offset and next_char.b < cur_char.b + y_offset:
 					next_char.c = cur_char.c[:-2] + next_char.c + '} '
 					cur_char.c = ''
 					next_char.l = cur_char.l

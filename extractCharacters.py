@@ -68,7 +68,7 @@ def getContours(imgPath):
 	#img = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
 	skewAngle = getSkew(img)
 	print ("\nskewAngle", skewAngle)
-	img = deskew(img, skewAngle)
+	#img = deskew(img, skewAngle)
 	contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 	return img, contours
 
@@ -102,7 +102,8 @@ def predict(model, rectangles):
 		if "rightarrow" in pred or "leftarrow" in pred:
 			pred = "frac"
 		if ' ' in pred:
-			pred = ' {\sym ' + pred + '} '
+			#pred = ' {\sym ' + pred + '} '
+			pred = ''
 		rectangles[i].prediction = pred 
 
 if __name__=='__main__':
