@@ -101,7 +101,9 @@ def predict(model, rectangles):
 		pred = class_codes[class_argmax[np.argmax(res[i])]]
 		if "rightarrow" in pred or "leftarrow" in pred:
 			pred = "frac"
-		rectangles[i].prediction = pred if len(pred.split(" ")) == 1 else ''
+		if ' ' in pred:
+			pred = ' {\sym ' + pred + '} '
+		rectangles[i].prediction = pred 
 
 if __name__=='__main__':
 	s1 = time.time()
