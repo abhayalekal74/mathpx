@@ -20,13 +20,13 @@ def die(err):
 	exit("\nError: {}, exiting".format(err))
 
 
-def validate_args(args):
+def validateArgs(args):
 	# It is mandatory to pass classes json. If not found, the program will exit
 	if not args.classes:
 		die("classes argument is required")
 	try:
-		dir_check = isdir(args.classes)
-		if not dir_check:
+		dirCheck = isdir(args.classes)
+		if not dirCheck:
 			raise IOError
 	except IOError:
 		die("classes not found")
@@ -42,10 +42,10 @@ def validate_args(args):
 		print ("Pass a shape only if the model was already trained on this shape, ignoring provided shape")
 
 
-def parse_args():
+def parseArgs():
 	parser = argparse.ArgumentParser()
-	required_args = parser.add_argument_group("Required Arguments")
-	required_args.add_argument("--classes", help="json containing folder path as the key and class as value")
+	requiredArgs = parser.add_argument_group("Required Arguments")
+	requiredArgs.add_argument("--classes", help="json containing folder path as the key and class as value")
 	parser.add_argument("--model", help="pass an already trained model for further training or for prediction")
 	parser.add_argument("--shape", help="shape the images should be resized to, pass if using an already trained model or running prediction. Shape should be the same as what it was trained on. If training a new model, program will print this")
 	parser.add_argument("--save-as", dest="saveas", default="output_model.h5", help="save the model as")
@@ -54,46 +54,46 @@ def parse_args():
 	parser.add_argument("--pred", dest="predict", action="store_true", help="run prediction instead of training")
 	parser.set_defaults(predict=False)
 	parser.set_defaults(resize=True)
-	args = parser.parse_args()
-	validate_args(args)
+	args = parser.parseArgs()
+	validateArgs(args)
 	return args
 
 
-def get_images(classes):
+def getImages(classes):
 	images = []
-	for folder_name in classes:
-		images += [join(folder_name, f) for f in listdir(folder_name) if isfile(join(folder_name, f))]
+	for folderName in classes:
+		images += [join(folderName, f) for f in listdir(folderName) if isfile(join(folderName, f))]
 	return images
 
 
-def get_classes(src_folder):
+def getClasses(srcFolder):
 	classes = dict()
-	for f in listdir(src_folder):
-		if isdir(join(src_folder, f)):
-			classes[join(src_folder, f)] = f
+	for f in listdir(srcFolder):
+		if isdir(join(srcFolder, f)):
+			classes[join(srcFolder, f)] = f
 	return classes
 
 
-def get_resize_shape(images, resize, shape=None):
+def getResizeShape(images, resize, shape=None):
 	# If the shape is provided, use as it is else calculate mean rows and cols. 
 	if shape:
 		rows, cols = map(int, shape.split(","))
 	elif resize:	
-		row_shapes, col_shapes = [], []
+		rowShapes, colShapes = [], []
 		for img in images:
-			img_matrix = imread(img, mode='L')
-			if img_matrix is not None:
-				row_shapes.append(img_matrix.shape[0])
-				col_shapes.append(img_matrix.shape[1])
-		rows = (int) (np.mean(row_shapes))
-		cols = (int) (np.mean(col_shapes))
+			imgMatrix = imread(img, mode='L')
+			if imgMatrix is not None:
+				rowShapes.append(imgMatrix.shape[0])
+				colShapes.append(imgMatrix.shape[1])
+		rows = (int) (np.mean(rowShapes))
+		cols = (int) (np.mean(colShapes))
 		print ("Resizing images to shape [{},{}]".format(rows, cols))
 	else:
 		# Read one image's shape
 		for img in images:
-			img_matrix = imread(images[0], mode='L')
-			if img_matrix is not None:
-				rows, cols = img_matrix.shape[0], img_matrix.shape[1]
+			imgMatrix = imread(images[0], mode='L')
+			if imgMatrix is not None:
+				rows, cols = imgMatrix.shape[0], imgMatrix.shape[1]
 				break
 	return rows, cols
 
@@ -102,61 +102,61 @@ class LanguageDetector:
 
 	def __init__(self, args):
 
-		self.classes = get_classes(args.classes)
-		self.images = get_images(self.classes)
+		self.classes = getClasses(args.classes)
+		self.images = getImages(self.classes)
 
-		self.model_load_from = args.model
-		self.save_as = args.saveas
+		self.modelLoadFrom = args.model
+		self.saveas = args.saveas
 		self.epochs = args.epochs
-		self.should_resize_images = args.resize
+		self.shouldResizeImages = args.resize
 
-		self.rows, self.cols = get_resize_shape(self.images, self.should_resize_images, shape=args.shape)
+		self.rows, self.cols = getResizeShape(self.images, self.shouldResizeImages, shape=args.shape)
 
-		self.encode_labels()
-		self.build_model()
+		self.encodeLabels()
+		self.buildModel()
 
 
-	def encode_labels(self):
+	def encodeLabels(self):
 		from sklearn.preprocessing import MultiLabelBinarizer 
 		if predict:
-			self.label_encoder = pickle.load(open('label_encoder.pkl', 'rb'))
+			self.labelEncoder = pickle.load(open('labelEncoder.pkl', 'rb'))
 		else:
 			labels = []
 			# labels in string form are encoded using MultiLabelBinarizer
 			for k, v in self.classes.items():
 				labels.append([l.strip() for l in v.split(",")])
-			self.label_encoder = MultiLabelBinarizer()
-			self.label_encoder.fit_transform(labels)		
-			pickle.dump(self.label_encoder, open('label_encoder.pkl', 'wb'))
+			self.labelEncoder = MultiLabelBinarizer()
+			self.labelEncoder.fit_transform(labels)		
+			pickle.dump(self.labelEncoder, open('labelEncoder.pkl', 'wb'))
  
 
-	def get_dataset(self, start, end):
+	def getDataset(self, start, end):
 		x, y = None,[]
 		temp = []
 		for i in tqdm(range(start, end)):
 			img = self.images[i]
-			img_matrix = imread(img, mode='L')
-			if img_matrix is not None:
-				if self.should_resize_images:
+			imgMatrix = imread(img, mode='L')
+			if imgMatrix is not None:
+				if self.shouldResizeImages:
 					# Resize the images to a common shape
-					img_matrix = imresize(img_matrix, (self.rows, self.cols)) 
+					imgMatrix = imresize(imgMatrix, (self.rows, self.cols)) 
 				# Append the image matrix to the list of input matrices
 				if args.predict:
 					if x is None:
 						x = []
-					x.append(img_matrix)
+					x.append(imgMatrix)
 				else:
-					temp.append(img_matrix)
+					temp.append(imgMatrix)
 					if len(temp) % 10000 == 0:
 						if x is None:
 							x = np.array(temp)
 						else:
 							x = np.append(x, np.array(temp), axis = 0)
 						temp = []
-				#x.append(img_matrix)
+				#x.append(imgMatrix)
 				labels = str(self.classes[img[:img.rfind("/")]]).split(",")
 				# Append the labels to output list
-				y.append(np.squeeze(self.label_encoder.transform([labels])))
+				y.append(np.squeeze(self.labelEncoder.transform([labels])))
 		print (x is None)
 		if len(temp) > 0:
 			if x is None:
@@ -173,10 +173,10 @@ class LanguageDetector:
 		return x, np.array(y)
 
 
-	def build_model(self):
-		if self.model_load_from:
+	def buildModel(self):
+		if self.modelLoadFrom:
 			# If a model has been passed, use it.
-			self.model = keras.models.load_model(self.model_load_from)
+			self.model = keras.models.load_model(self.modelLoadFrom)
 		else:
 			# Otherwise build a CNN
 			self.model = keras.models.Sequential()
@@ -213,7 +213,7 @@ class LanguageDetector:
 			self.model.add(keras.layers.Dropout(0.2))
 
 			# Last layer, responsible for predicting the output
-			self.model.add(keras.layers.Dense(len(self.label_encoder.classes_), activation='softmax'))
+			self.model.add(keras.layers.Dense(len(self.labelEncoder.classes_), activation='softmax'))
 
 	def train(self):
 		self.model.compile(loss='categorical_crossentropy',
@@ -221,49 +221,49 @@ class LanguageDetector:
 					  metrics=['accuracy'])
 
 		# Create checkpoint after every epoch
-		cb = [keras.callbacks.ModelCheckpoint(self.save_as[:-3] + "_cp.h5", monitor='acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)]
+		cb = [keras.callbacks.ModelCheckpoint(self.saveas[:-3] + "_cp.h5", monitor='acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)]
 
-		x_train, y_train = self.get_dataset(5, len(self.images))
-		x_val, y_val = self.get_dataset(0, 5)
+		XTrain, YTrain = self.getDataset(5, len(self.images))
+		XVal, YVal = self.getDataset(0, 5)
 
 		# Fit the model on the training data
-		self.model.fit(x_train, y_train,
+		self.model.fit(XTrain, YTrain,
 				  epochs=self.epochs,
 				  batch_size=32,
 				  callbacks=cb
 				)
 
 		# Save the model with the value passed for -saveas argument
-		self.model.save(self.save_as)
+		self.model.save(self.saveas)
 
-		print ("\nEvaluation on validation data: {}".format(dict(zip(["Loss", "Accuracy"], self.model.evaluate(x_val, y_val, batch_size=32)))))
+		print ("\nEvaluation on validation data: {}".format(dict(zip(["Loss", "Accuracy"], self.model.evaluate(XVal, YVal, batch_size=32)))))
 
 
 	def predict(self):
 		with open('classcodes.json', 'r') as f:
 			class_codes = json.load(f)
-		x_test, y_test = self.get_dataset(0, len(self.images))
-		res = self.model.predict(x_test, batch_size=32, verbose=1)
-		class_argmax = {} # Storing encoding index
-		print (self.label_encoder.classes_)
-		for c in self.label_encoder.classes_:
-			class_argmax[np.argmax(self.label_encoder.transform([[c,]]))] = c
+		XTest, YTest = self.getDataset(0, len(self.images))
+		res = self.model.predict(XTest, batch_size=32, verbose=1)
+		classArgmax = {} # Storing encoding index
+		print (self.labelEncoder.classes_)
+		for c in self.labelEncoder.classes_:
+			classArgmax[np.argmax(self.labelEncoder.transform([[c,]]))] = c
 		outputs = list()
 		for i in range(len(self.images)):
 			try:
-				outputs.append((int(self.images[i].rsplit('/', 1)[1].split('.')[0]), self.images[i], class_argmax[np.argmax(res[i])], class_codes[class_argmax[np.argmax(res[i])]]))
+				outputs.append((int(self.images[i].rsplit('/', 1)[1].split('.')[0]), self.images[i], classArgmax[np.argmax(res[i])], class_codes[classArgmax[np.argmax(res[i])]]))
 			except:
-				outputs.append((self.images[i].rsplit('/', 1)[1].split('.')[0], self.images[i], class_argmax[np.argmax(res[i])], class_codes[class_argmax[np.argmax(res[i])]]))
+				outputs.append((self.images[i].rsplit('/', 1)[1].split('.')[0], self.images[i], classArgmax[np.argmax(res[i])], class_codes[classArgmax[np.argmax(res[i])]]))
 				
 		outputs.sort(key=lambda x: x[0])
 		pp.pprint (outputs)
-		print ("\nEvaluation on test data: {}".format(dict(zip(["Loss", "Accuracy"], self.model.evaluate(x_test, y_test, batch_size=32)))))
+		print ("\nEvaluation on test data: {}".format(dict(zip(["Loss", "Accuracy"], self.model.evaluate(XTest, YTest, batch_size=32)))))
 
 
 if __name__=="__main__":
-	args = parse_args()
+	args = parseArgs()
 	predict = args.predict
 	print (predict)
 	keras.backend.set_learning_phase(0)
-	language_detector = LanguageDetector(args)
-	language_detector.predict() if args.predict else language_detector.train()
+	languageDetector = LanguageDetector(args)
+	languageDetector.predict() if args.predict else languageDetector.train()

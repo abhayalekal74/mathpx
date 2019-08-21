@@ -89,7 +89,7 @@ def getBoundingRects(img, contours):
 	
 
 def predict(model, rectangles):	
-	labelEncoder = pickle.load(open('char-recognition-model/label_encoder.pkl', 'rb'))
+	labelEncoder = pickle.load(open('char-recognition-model/labelEncoder.pkl', 'rb'))
 	with open('char-recognition-model/classcodes.json', 'r') as f:
 		classCodes = json.load(f)
 	classArgmax = {}
