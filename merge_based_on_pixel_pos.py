@@ -72,6 +72,14 @@ class WordBound:
 	def orderChars(self):
 		self.charBounds.sort(key=lambda x: x.l)
 
+	def handlePowers(self):
+		for i in range(1, len(self.charBounds)):
+			cur_char = self.charBounds[i - 1]
+			next_char = self.charBounds[i]
+			if 'frac' not in cur_char.c and 'frac' not in next_char.c and next_char.b >= cur_char.t and next_char.b < cur_char.t + (cur_char.b - cur_char.t) / 3:
+				next_char.c = '^' + next_char.c
+			
+
 	def mergeCharFractions(self):
 		removeChars = list()
 		if self.has_fraction:
@@ -102,6 +110,7 @@ class WordBound:
 					removeChars += charBoundsInRange
 		self.removeCharBounds(removeChars)
 		self.orderChars()
+		self.handlePowers()
 	
 	def latex(self):
 		chars = list()

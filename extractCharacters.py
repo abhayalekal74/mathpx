@@ -65,6 +65,7 @@ def getContours(imgPath):
 	img = cv2.imread(imgPath, cv2.IMREAD_GRAYSCALE)
 	img = cv2.GaussianBlur(img, (3,3), 0)
 	img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 475, 10)
+	#img = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
 	skewAngle = getSkew(img)
 	print ("\nskewAngle", skewAngle)
 	img = deskew(img, skewAngle)
