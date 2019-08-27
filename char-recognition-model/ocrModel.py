@@ -54,7 +54,7 @@ def parseArgs():
 	parser.add_argument("--pred", dest="predict", action="store_true", help="run prediction instead of training")
 	parser.set_defaults(predict=False)
 	parser.set_defaults(resize=True)
-	args = parser.parseArgs()
+	args = parser.parse_args()
 	validateArgs(args)
 	return args
 
@@ -183,17 +183,17 @@ class LanguageDetector:
 	
 			self.model.add(keras.layers.BatchNormalization(input_shape=(self.rows, self.cols)))
 	
-			self.model.add(keras.layers.Conv1D(16, 5, activation='relu', input_shape=(self.rows, self.cols))) 
+			self.model.add(keras.layers.Conv1D(32, 3, activation='relu', input_shape=(self.rows, self.cols))) 
 			self.model.add(keras.layers.BatchNormalization())
 			self.model.add(keras.layers.MaxPooling1D(pool_size=2, padding='same'))
 			self.model.add(keras.layers.Dropout(0.2))
 	
-			self.model.add(keras.layers.Conv1D(32, 5, activation='relu'))
+			self.model.add(keras.layers.Conv1D(32, 3, activation='relu'))
 			self.model.add(keras.layers.BatchNormalization())
 			self.model.add(keras.layers.MaxPooling1D(pool_size=2, padding='same'))
 			self.model.add(keras.layers.Dropout(0.2))
 	
-			self.model.add(keras.layers.Conv1D(48, 3, activation='relu'))
+			self.model.add(keras.layers.Conv1D(64, 3, activation='relu'))
 			self.model.add(keras.layers.BatchNormalization())
 			self.model.add(keras.layers.MaxPooling1D(pool_size=2, padding='same'))
 			self.model.add(keras.layers.Dropout(0.2))
@@ -245,18 +245,21 @@ class LanguageDetector:
 		XTest, YTest = self.getDataset(0, len(self.images))
 		res = self.model.predict(XTest, batch_size=32, verbose=1)
 		classArgmax = {} # Storing encoding index
-		print (self.labelEncoder.classes_)
+		print (type(self.labelEncoder.classes_))
 		for c in self.labelEncoder.classes_:
 			classArgmax[np.argmax(self.labelEncoder.transform([[c,]]))] = c
+		"""
 		outputs = list()
 		for i in range(len(self.images)):
 			try:
 				outputs.append((int(self.images[i].rsplit('/', 1)[1].split('.')[0]), self.images[i], classArgmax[np.argmax(res[i])], class_codes[classArgmax[np.argmax(res[i])]]))
 			except:
 				outputs.append((self.images[i].rsplit('/', 1)[1].split('.')[0], self.images[i], classArgmax[np.argmax(res[i])], class_codes[classArgmax[np.argmax(res[i])]]))
-				
 		outputs.sort(key=lambda x: x[0])
 		pp.pprint (outputs)
+		"""	
+		for i in range(len(self.images)):
+			print (self.images[i], classArgmax[np.argmax(res[i])])
 		print ("\nEvaluation on test data: {}".format(dict(zip(["Loss", "Accuracy"], self.model.evaluate(XTest, YTest, batch_size=32)))))
 
 

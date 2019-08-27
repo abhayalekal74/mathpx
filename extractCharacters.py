@@ -98,7 +98,10 @@ def predict(model, rectangles):
 	imgs = np.array([imresize(r.paddedPixelMatrix, (modelShape, modelShape)) for r in rectangles])
 	res = model.predict(imgs)
 	for i in range(len(res)):
-		pred = classCodes[classArgmax[np.argmax(res[i])]]
+		try:
+			pred = classCodes[classArgmax[np.argmax(res[i])]]
+		except:
+			pred = classArgmax[np.argmax(res[i])]
 		if "rightarrow" in pred or "leftarrow" in pred:
 			pred = "frac"
 		if ' ' in pred:
